@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Recording by bby Taztsuu</title>
+
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#22c55e',
+              500: '#22c55e',
+              600: '#16a34a',
+              dark: '#0b0f19',
+              card: '#131d31'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    body { background-color: #0b0f19; color: #f3f4f6; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+
+<body class="min-h-screen pb-20 font-sans">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 bg-[#0b0f19]/90 backdrop-blur-md border-b border-gray-800">
+    <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <h1 class="font-bold text-lg tracking-wide">Financial Recording</h1>
+      <div class="flex items-center gap-3">
+        <button class="text-gray-400 hover:text-white"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <button class="text-gray-400 hover:text-white"><i class="fa-regular fa-bell"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto px-4 py-4 space-y-5">
+
+    <!-- AUTH SECTION -->
+    <section id="authScreen" class="my-10 fade-in">
+      <div class="bg-[#131d31] border border-gray-800 rounded-2xl p-6 shadow-xl">
+        <div class="flex border-b border-gray-800 mb-6">
+          <button id="tabLogin" class="w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500">Masuk</button>
+          <button id="tabRegister" class="w-1/2 py-2 font-bold text-sm text-gray-400">Daftar</button>
+        </div>
+
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-400">Username</label>
+            <input type="text" id="loginUser" required class="w-full px-3 py-2 text-sm rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-400">PIN Akses</label>
+            <input type="password" id="loginPin" required class="w-full px-3 py-2 text-sm rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-semibold transition shadow-md">Masuk</button>
+        </form>
+
+        <form id="registerForm" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-400">Username Baru</label>
+            <input type="text" id="regUser" required class="w-full px-3 py-2 text-sm rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-400">Buat PIN</label>
+            <input type="password" id="regPin" required class="w-full px-3 py-2 text-sm rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-semibold transition shadow-md">Buat Akun</button>
+        </form>
+        <div id="authMsg" class="text-xs text-center mt-3 font-medium hidden"></div>
+      </div>
+    </section>
+
+    <!-- MAIN APP DASHBOARD -->
+    <section id="appScreen" class="hidden space-y-5 fade-in">
+      
+      <!-- SALDO TOTAL CARD -->
+      <div class="bg-gradient-to-br from-[#131d31] to-[#1e293b] border border-gray-800 p-5 rounded-2xl shadow-lg relative overflow-hidden">
+        <div class="absolute -right-6 -bottom-6 opacity-10 text-brand-500 text-8xl"><i class="fa-solid fa-wallet"></i></div>
+        <p class="text-xs text-gray-400 font-medium mb-1">Saldo Total</p>
+        <h2 id="totalBalance" class="text-2xl font-bold text-white mb-4">Rp 0</h2>
+        <div class="flex items-center justify-between text-xs pt-3 border-t border-gray-800/60">
+          <div>
+            <span id="monthIncome" class="text-emerald-400 font-semibold">+Rp 0</span>
+            <p class="text-gray-400 text-[10px]">↑ Bulan ini[cite: 5]</p>
+          </div>
+          <div class="text-right">
+            <span id="monthExpense" class="text-rose-400 font-semibold">Rp 0</span>
+            <p class="text-gray-400 text-[10px]">↓ Bulan ini[cite: 5]</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOMPET TERPISAH[cite: 5] -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm">Dompet Terpisah[cite: 5]</h3>
+          <button onclick="openWalletModal()" class="text-xs text-brand-500 hover:underline">+ Tambah Dompet</button>
+        </div>
+        <div id="walletList" class="grid grid-cols-2 gap-3">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- TARGET NABUNG[cite: 5] -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm">Target Nabung[cite: 5]</h3>
+          <button onclick="openSavingsModal()" class="text-xs text-brand-500 hover:underline">+ Tambah Target[cite: 5]</button>
+        </div>
+        <div id="savingsList" class="space-y-3">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- CATAT TRANSAKSI CEPAT -->
+      <div class="bg-[#131d31] border border-gray-800 p-4 rounded-2xl shadow-sm">
+        <h3 class="font-bold text-sm mb-3"><i class="fa-solid fa-circle-plus text-brand-500 mr-1"></i> Catat Transaksi Baru</h3>
+        <form id="transactionForm" class="space-y-3">
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btnIncome" onclick="setType('income')" class="py-1.5 rounded-xl text-xs font-semibold border border-brand-500 text-brand-500 bg-brand-500/10">Pemasukan</button>
+            <button type="button" id="btnExpense" onclick="setType('expense')" class="py-1.5 rounded-xl text-xs font-semibold border border-gray-700 text-gray-400">Pengeluaran</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="amountInput" required placeholder="Jumlah (Rp)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+            <input type="text" id="categoryInput" required placeholder="Kategori (Makan, Gaji)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="date" id="dateInput" required class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+            <input type="text" id="noteInput" placeholder="Catatan (opsional)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <button type="submit" class="w-full py-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-xl text-xs transition">Simpan Transaksi</button>
+        </form>
+      </div>
+
+      <!-- RIWAYAT & EXCEL -->
+      <div class="bg-[#131d31] border border-gray-800 p-4 rounded-2xl shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm">Riwayat Transaksi</h3>
+          <button id="btnExportExcel" class="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg font-medium"><i class="fa-solid fa-file-excel mr-1"></i> Excel</button>
+        </div>
+        <div class="overflow-x-auto max-h-48 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <tbody id="transactionList" class="divide-y divide-gray-800"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- BOTTOM NAVIGATION BAR[cite: 5] -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-[#0b0f19]/95 backdrop-blur-md border-t border-gray-800 z-40 max-w-md mx-auto">
+    <div class="flex justify-around py-2.5 text-gray-400 text-xs font-medium">
+      <button onclick="switchNav('beranda')" class="flex flex-col items-center text-brand-500"><i class="fa-solid fa-house text-base mb-0.5"><span>Beranda</span></i></button>
+      <button onclick="switchNav('transaksi')" class="flex flex-col items-center hover:text-white"><i class="fa-solid fa-list-check text-base mb-0.5"><span>Transaksi</span></i></button>
+      <button onclick="switchNav('target')" class="flex flex-col items-center hover:text-white"><i class="fa-solid fa-bullseye text-base mb-0.5"><span>Target</span></i></button>
+      <button onclick="switchNav('dompet')" class="flex flex-col items-center hover:text-white"><i class="fa-solid fa-wallet text-base mb-0.5"><span>Dompet</span></i></button>
+      <button onclick="logout()" class="flex flex-col items-center hover:text-rose-400"><i class="fa-solid fa-right-from-bracket text-base mb-0.5"><span>Keluar</span></i></button>
+    </div>
+  </nav>
+
+  <!-- MODAL TAMBAH DOMPET -->
+  <div id="walletModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-[#131d31] border border-gray-800 p-5 rounded-2xl w-full max-w-xs space-y-4">
+      <h3 class="font-bold text-sm">Tambah Dompet Baru</h3>
+      <form id="walletForm" class="space-y-3">
+        <input type="text" id="walletName" required placeholder="Nama Dompet (cth: DANA)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <input type="number" id="walletBalance" required placeholder="Saldo Awal (Rp)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <div class="flex gap-2">
+          <button type="submit" class="w-1/2 py-2 bg-brand-500 text-white rounded-xl text-xs font-semibold">Simpan</button>
+          <button type="button" onclick="closeWalletModal()" class="w-1/2 py-2 bg-gray-800 text-gray-300 rounded-xl text-xs font-semibold">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL TARGET NABUNG -->
+  <div id="savingsModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-[#131d31] border border-gray-800 p-5 rounded-2xl w-full max-w-xs space-y-4">
+      <h3 class="font-bold text-sm">Tambah Target Nabung</h3>
+      <form id="savingsForm" class="space-y-3">
+        <input type="text" id="savingsTitle" required placeholder="Nama Target (cth: Beli Headset)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <input type="number" id="savingsTarget" required placeholder="Target Nominal (Rp)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <input type="number" id="savingsCurrent" required placeholder="Terkumpul Saat Ini (Rp)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <div class="flex gap-2">
+          <button type="submit" class="w-1/2 py-2 bg-brand-500 text-white rounded-xl text-xs font-semibold">Simpan</button>
+          <button type="button" onclick="closeSavingsModal()" class="w-1/2 py-2 bg-gray-800 text-gray-300 rounded-xl text-xs font-semibold">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT UTAMA SUPABASE -->
+  <script>
+    const SUPABASE_URL = 'https://mlsvsfedblnazhiitacw.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_RffE_kjkKOX4JAhvlaYIBw_x3jRkyir';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = localStorage.getItem('bby_active_user') || null;
+    let transactions = [];
+    let wallets = [];
+    let savings = [];
+    let currentType = 'income';
+
+    const authScreen = document.getElementById('authScreen');
+    const appScreen = document.getElementById('appScreen');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const authMsg = document.getElementById('authMsg');
+
+    document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+
+    tabLogin.addEventListener('click', () => {
+      tabLogin.className = "w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500";
+      tabRegister.className = "w-1/2 py-2 font-bold text-sm text-gray-400";
+      loginForm.classList.remove('hidden');
+      registerForm.classList.add('hidden');
+    });
+
+    tabRegister.addEventListener('click', () => {
+      tabRegister.className = "w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500";
+      tabLogin.className = "w-1/2 py-2 font-bold text-sm text-gray-400";
+      registerForm.classList.remove('hidden');
+      loginForm.classList.add('hidden');
+    });
+
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('regUser').value.trim().toLowerCase();
+      const pin = document.getElementById('regPin').value;
+      const { error } = await db.from('users').insert([{ username: user, pin: pin }]);
+      if (error) { authMsg.innerText = "Username sudah ada!"; authMsg.className = "text-xs text-center mt-3 text-rose-500 font-medium"; authMsg.classList.remove('hidden'); }
+      else { authMsg.innerText = "Berhasil! Silakan Masuk."; authMsg.className = "text-xs text-center mt-3 text-emerald-500 font-medium"; authMsg.classList.remove('hidden'); tabLogin.click(); }
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('loginUser').value.trim().toLowerCase();
+      const pin = document.getElementById('loginPin').value;
+      const { data } = await db.from('users').select('*').eq('username', user).eq('pin', pin).maybeSingle();
+      if (!data) { authMsg.innerText = "Username/PIN Salah!"; authMsg.className = "text-xs text-center mt-3 text-rose-500 font-medium"; authMsg.classList.remove('hidden'); }
+      else { currentUser = user; localStorage.setItem('bby_active_user', currentUser); initDashboard(); }
+    });
+
+    function logout() {
+      localStorage.removeItem('bby_active_user');
+      currentUser = null;
+      appScreen.classList.add('hidden');
+      authScreen.classList.remove('hidden');
+    }
+
+    async function initDashboard() {
+      authScreen.classList.add('hidden');
+      appScreen.classList.remove('hidden');
+      await loadData();
+    }
+
+    async function loadData() {
+      const [txRes, walRes, savRes] = await Promise.all([
+        db.from('transactions').select('*').eq('username', currentUser).order('date', { ascending: false }),
+        db.from('wallets').select('*').eq('username', currentUser),
+        db.from('savings_goals').select('*').eq('username', currentUser)
+      ]);
+      transactions = txRes.data || [];
+      wallets = walRes.data || [];
+      savings = savRes.data || [];
+      renderAll();
+    }
+
+    function setType(type) {
+      currentType = type;
+      if(type === 'income') {
+        document.getElementById('btnIncome').className = "py-1.5 rounded-xl text-xs font-semibold border border-brand-500 text-brand-500 bg-brand-500/10";
+        document.getElementById('btnExpense').className = "py-1.5 rounded-xl text-xs font-semibold border border-gray-700 text-gray-400";
+      } else {
+        document.getElementById('btnExpense').className = "py-1.5 rounded-xl text-xs font-semibold border border-rose-500 text-rose-500 bg-rose-500/10";
+        document.getElementById('btnIncome').className = "py-1.5 rounded-xl text-xs font-semibold border border-gray-700 text-gray-400";
+      }
+    }
+
+    function formatRupiah(num) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
+    }
+
+    function renderAll() {
+      let totalInc = 0, totalExp = 0;
+      const list = document.getElementById('transactionList');
+      list.innerHTML = '';
+
+      transactions.forEach(t => {
+        if(t.type === 'income') totalInc += Number(t.amount);
+        else totalExp += Number(t.amount);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2"><span class="block font-medium">${t.category}</span><span class="text-[10px] text-gray-400">${t.date}</span></td>
+          <td class="py-2 text-right font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">${t.type === 'income' ? '+' : '-'}${formatRupiah(t.amount)}</td>
+        `;
+        list.appendChild(tr);
+      });
+
+      document.getElementById('totalBalance').innerText = formatRupiah(totalInc - totalExp);
+      document.getElementById('monthIncome').innerText = `+${formatRupiah(totalInc)}`;
+      document.getElementById('monthExpense').innerText = formatRupiah(totalExp);
+
+      // Render Wallets
+      const walContainer = document.getElementById('walletList');
+      walContainer.innerHTML = '';
+      wallets.forEach(w => {
+        walContainer.innerHTML += `
+          <div class="bg-[#131d31] border border-gray-800 p-3 rounded-xl">
+            <p class="text-xs text-gray-400">${w.name}</p>
+            <h4 class="font-bold text-sm text-white">${formatRupiah(w.balance)}</h4>
+          </div>
+        `;
+      });
+
+      // Render Savings
+      const savContainer = document.getElementById('savingsList');
+      savContainer.innerHTML = '';
+      savings.forEach(s => {
+        const pct = Math.min(100, Math.round((s.current_amount / s.target_amount) * 100));
+        savContainer.innerHTML += `
+          <div class="bg-[#131d31] border border-gray-800 p-3.5 rounded-xl space-y-2">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-white">${s.title}</span>
+              <span class="text-gray-400">${formatRupiah(s.current_amount)} / ${formatRupiah(s.target_amount)}</span>
+            </div>
+            <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+              <div class="bg-brand-500 h-full rounded-full" style="width: ${pct}%"></div>
+            </div>
+            <div class="flex justify-between text-[10px] text-gray-400">
+              <span>${pct}% tercapai</span>
+              <span>Target Tercapai</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Modal Controls
+    function openWalletModal() { document.getElementById('walletModal').classList.remove('hidden'); }
+    function closeWalletModal() { document.getElementById('walletModal').classList.add('hidden'); }
+    function openSavingsModal() { document.getElementById('savingsModal').classList.remove('hidden'); }
+    function closeSavingsModal() { document.getElementById('savingsModal').classList.add('hidden'); }
+
+    document.getElementById('walletForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await db.from('wallets').insert([{ username: currentUser, name: document.getElementById('walletName').value, balance: document.getElementById('walletBalance').value }]);
+      closeWalletModal(); loadData();
+    });
+
+    document.getElementById('savingsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await db.from('savings_goals').insert([{ username: currentUser, title: document.getElementById('savingsTitle').value, target_amount: document.getElementById('savingsTarget').value, current_amount: document.getElementById('savingsCurrent').value }]);
+      closeSavingsModal(); loadData();
+    });
+
+    document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await db.from('transactions').insert([{
+        username: currentUser,
+        type: currentType,
+        amount: document.getElementById('amountInput').value,
+        category: document.getElementById('categoryInput').value,
+        date: document.getElementById('dateInput').value,
+        note: document.getElementById('noteInput').value
+      }]);
+      document.getElementById('transactionForm').reset();
+      loadData();
+    });
+
+    if (currentUser) initDashboard();
+  </script>
+</body>
+</html>

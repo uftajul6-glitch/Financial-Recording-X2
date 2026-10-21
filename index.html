@@ -1,761 +1,514 @@
 <!DOCTYPE html>
 <html lang="id" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Recording - Pro Dashboard v2</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Recording - v2</title>
 
-    <!-- Tailwind CSS & FontAwesome -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            bg: '#0b0f19',
-                            card: '#131d31',
-                            border: '#1e293b'
-                        }
-                    }
-                }
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#22c55e',
+              500: '#22c55e',
+              600: '#16a34a',
+              dark: '#0b0f19',
+              card: '#131d31'
             }
+          }
         }
-    </script>
+      }
+    }
+  </script>
 
-    <style>
-        body { background-color: #0b0f19; color: #f3f4f6; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass-card { background: rgba(19, 29, 49, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .tab-btn.active { color: #22c55e; border-bottom: 2px solid #22c55e; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    body { background-color: #0b0f19; color: #f3f4f6; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* Paksa elemen dengan class hidden agar tidak tampil sama sekali */
+    .hidden { display: none !important; }
+  </style>
 </head>
-<body class="min-h-screen pb-24 text-slate-100 bg-[#0b0f19]">
 
-    <!-- HEADER -->
-    <header class="sticky top-0 z-30 bg-[#0b0f19]/90 backdrop-blur-md border-b border-slate-800/80">
-        <div class="max-w-md sm:max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-green-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-emerald-500/20">
-                    <i class="fa-solid fa-wallet text-base"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-sm tracking-tight text-white leading-none">Financial Recording</h1>
-                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">by Taztsuu • Pro v2.0</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2" id="headerActions">
-                <button onclick="showToast('Sistem siap digunakan!', 'info')" class="w-8 h-8 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 flex items-center justify-center text-xs border border-slate-700/50 transition">
-                    <i class="fa-regular fa-bell"></i>
-                </button>
-            </div>
-        </div>
-    </header>
+<body class="min-h-screen pb-24 font-sans">
 
-    <main class="max-w-md sm:max-w-xl mx-auto px-4 py-5 space-y-5">
-
-        <!-- AUTH SCREEN (LOGIN & REGISTER) -->
-        <section id="authScreen" class="py-6">
-            <div class="glass-card rounded-3xl p-6 shadow-2xl space-y-6">
-                
-                <div class="text-center space-y-1">
-                    <h2 class="text-xl font-extrabold text-white">Selamat Datang</h2>
-                    <p class="text-xs text-slate-400">Masuk atau buat akun baru untuk mulai mencatat</p>
-                </div>
-
-                <!-- Auth Tabs -->
-                <div class="flex border-b border-slate-800 text-xs font-bold text-center">
-                    <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="tab-btn active w-1/2 py-2.5 text-slate-400 hover:text-white transition">Masuk</button>
-                    <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="tab-btn w-1/2 py-2.5 text-slate-400 hover:text-white transition">Daftar Akun</button>
-                </div>
-
-                <!-- Login Form -->
-                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Username</label>
-                        <div class="relative">
-                            <i class="fa-regular fa-user absolute left-3.5 top-3 text-xs text-slate-500"></i>
-                            <input type="text" id="loginUsername" required placeholder="Masukkan username" class="w-full pl-9 pr-3 py-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">PIN Akses (6 Angka)</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-lock absolute left-3.5 top-3 text-xs text-slate-500"></i>
-                            <input type="password" id="loginPin" required maxlength="6" placeholder="••••••" class="w-full pl-9 pr-3 py-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold rounded-xl text-xs transition shadow-lg shadow-emerald-500/25 active:scale-[0.99]">
-                        Masuk Sekarang
-                    </button>
-                </form>
-
-                <!-- Register Form -->
-                <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Username Baru</label>
-                        <div class="relative">
-                            <i class="fa-regular fa-user absolute left-3.5 top-3 text-xs text-slate-500"></i>
-                            <input type="text" id="regUsername" required placeholder="Buat username unik" class="w-full pl-9 pr-3 py-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Buat PIN (6 Angka)</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-key absolute left-3.5 top-3 text-xs text-slate-500"></i>
-                            <input type="password" id="regPin" required maxlength="6" placeholder="••••••" class="w-full pl-9 pr-3 py-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold rounded-xl text-xs transition shadow-lg shadow-emerald-500/25 active:scale-[0.99]">
-                        Daftar Akun Baru
-                    </button>
-                </form>
-
-                <!-- Demo Access Button -->
-                <div class="pt-2 border-t border-slate-800 text-center">
-                    <button type="button" onclick="loginAsGuest()" class="text-xs text-emerald-400 hover:underline font-semibold flex items-center justify-center gap-1.5 w-full py-2">
-                        <i class="fa-solid fa-bolt"></i> Masuk Mode Tamu / Demo (Tanpa Register)
-                    </button>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- MAIN DASHBOARD CONTENT -->
-        <section id="appScreen" class="hidden space-y-5">
-
-            <!-- PAGE: BERANDA -->
-            <div id="pageBeranda" class="space-y-5">
-                
-                <!-- SALDO TOTAL CARD -->
-                <div class="glass-card bg-gradient-to-br from-[#131d31] via-[#162238] to-[#0f172a] p-5 rounded-3xl relative overflow-hidden shadow-xl border border-slate-800">
-                    <div class="absolute -right-6 -bottom-6 opacity-10 text-emerald-400 text-9xl pointer-events-none">
-                        <i class="fa-solid fa-wallet"></i>
-                    </div>
-                    
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-xs font-semibold text-slate-400">Total Saldo Bersih</span>
-                        <span id="userBadge" class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-bold">User</span>
-                    </div>
-
-                    <h2 id="totalBalance" class="text-3xl font-extrabold text-white tracking-tight my-2">Rp 0</h2>
-
-                    <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800/80 text-xs mt-3">
-                        <div class="bg-slate-900/60 p-2.5 rounded-2xl border border-slate-800">
-                            <span class="text-[10px] text-slate-400 block font-medium">Pemasukan Bulan Ini</span>
-                            <span id="monthIncome" class="text-emerald-400 font-extrabold text-sm block mt-0.5">+Rp 0</span>
-                        </div>
-                        <div class="bg-slate-900/60 p-2.5 rounded-2xl border border-slate-800">
-                            <span class="text-[10px] text-slate-400 block font-medium">Pengeluaran Bulan Ini</span>
-                            <span id="monthExpense" class="text-rose-400 font-extrabold text-sm block mt-0.5">-Rp 0</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- DOMPET TERPISAH OVERVIEW -->
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-xs text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <i class="fa-solid fa-[#22c55e] fa-wallet text-emerald-400"></i> Dompet Saya
-                        </h3>
-                        <button onclick="openWalletModal()" class="text-xs text-emerald-400 font-bold hover:underline">+ Tambah</button>
-                    </div>
-                    <div id="walletList" class="grid grid-cols-2 gap-3">
-                        <!-- Dynamic content -->
-                    </div>
-                </div>
-
-                <!-- CHART OVERVIEW -->
-                <div class="glass-card p-4 rounded-2xl space-y-3">
-                    <h3 class="font-bold text-xs text-slate-300 uppercase tracking-wider">Statistik Pengeluaran</h3>
-                    <div class="h-48 relative flex items-center justify-center">
-                        <canvas id="expenseChart"></canvas>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- PAGE: TRANSAKSI -->
-            <div id="pageTransaksi" class="space-y-5 hidden">
-                
-                <!-- CATAT TRANSAKSI BARU -->
-                <div class="glass-card p-4 rounded-2xl space-y-3">
-                    <h3 class="font-bold text-xs text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-circle-plus text-emerald-400"></i> Catat Transaksi Baru
-                    </h3>
-                    <form id="transactionForm" onsubmit="handleSaveTransaction(event)" class="space-y-3">
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" id="btnIncome" onclick="setType('income')" class="py-2 rounded-xl text-xs font-bold border border-emerald-500 text-emerald-400 bg-emerald-500/10">Pemasukan</button>
-                            <button type="button" id="btnExpense" onclick="setType('expense')" class="py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-400">Pengeluaran</button>
-                        </div>
-                        
-                        <div class="space-y-2">
-                            <input type="number" id="amountInput" required placeholder="Jumlah (Rp)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500">
-                            
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="text" id="categoryInput" required placeholder="Kategori (Makan, Gaji)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500">
-                                <select id="walletSelect" class="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500">
-                                    <option value="Utama">Dompet Utama</option>
-                                </select>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="date" id="dateInput" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500">
-                                <input type="text" id="noteInput" placeholder="Catatan (Opsional)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs transition shadow-md shadow-emerald-500/20">
-                            Simpan Transaksi
-                        </button>
-                    </form>
-                </div>
-
-                <!-- RIWAYAT TRANSAKSI TABLE -->
-                <div class="glass-card p-4 rounded-2xl space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-xs text-slate-300 uppercase tracking-wider">Riwayat Transaksi</h3>
-                        <button onclick="exportToExcel()" class="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 hover:bg-emerald-500/20">
-                            <i class="fa-solid fa-file-excel"></i> Export Excel
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto max-h-60 overflow-y-auto">
-                        <table class="w-full text-left text-xs">
-                            <tbody id="transactionList" class="divide-y divide-slate-800">
-                                <!-- Dynamic Rows -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- PAGE: TARGET NABUNG -->
-            <div id="pageTarget" class="space-y-5 hidden">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-xs text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-bullseye text-emerald-400"></i> Target Nabung Impian
-                    </h3>
-                    <button onclick="openSavingsModal()" class="text-xs text-emerald-400 font-bold hover:underline">+ Buat Target</button>
-                </div>
-
-                <div id="savingsList" class="space-y-3">
-                    <!-- Dynamic Savings Cards -->
-                </div>
-            </div>
-
-            <!-- PAGE: DOMPET -->
-            <div id="pageDompet" class="space-y-5 hidden">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-xs text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-wallet text-emerald-400"></i> Kelola Dompet
-                    </h3>
-                    <button onclick="openWalletModal()" class="text-xs text-emerald-400 font-bold hover:underline">+ Tambah Dompet</button>
-                </div>
-
-                <div id="fullWalletList" class="space-y-3">
-                    <!-- Full list of wallets -->
-                </div>
-            </div>
-
-        </section>
-
-    </main>
-
-    <!-- BOTTOM NAVIGATION BAR (FIXED & RESPONSIVE) -->
-    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-[#0b0f19]/95 backdrop-blur-lg border-t border-slate-800 z-50">
-        <div class="max-w-md sm:max-w-xl mx-auto flex items-center justify-between px-3 py-2 text-slate-400">
-            <button onclick="switchPage('beranda')" id="navBeranda" class="flex-1 flex flex-col items-center py-1 text-emerald-400 font-bold text-[10px]">
-                <i class="fa-solid fa-house text-base mb-1"></i>
-                <span>Beranda</span>
-            </button>
-            <button onclick="switchPage('transaksi')" id="navTransaksi" class="flex-1 flex flex-col items-center py-1 hover:text-white font-medium text-[10px] transition">
-                <i class="fa-solid fa-receipt text-base mb-1"></i>
-                <span>Transaksi</span>
-            </button>
-            <button onclick="switchPage('target')" id="navTarget" class="flex-1 flex flex-col items-center py-1 hover:text-white font-medium text-[10px] transition">
-                <i class="fa-solid fa-bullseye text-base mb-1"></i>
-                <span>Target</span>
-            </button>
-            <button onclick="switchPage('dompet')" id="navDompet" class="flex-1 flex flex-col items-center py-1 hover:text-white font-medium text-[10px] transition">
-                <i class="fa-solid fa-wallet text-base mb-1"></i>
-                <span>Dompet</span>
-            </button>
-            <button onclick="handleLogout()" class="flex-1 flex flex-col items-center py-1 hover:text-rose-400 font-medium text-[10px] transition">
-                <i class="fa-solid fa-right-from-bracket text-base mb-1"></i>
-                <span>Keluar</span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- MODAL TAMBAH DOMPET -->
-    <div id="walletModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="glass-card p-5 rounded-2xl w-full max-w-xs space-y-4 border border-slate-700">
-            <h3 class="font-bold text-sm text-white">Tambah Dompet Baru</h3>
-            <form id="walletForm" onsubmit="handleSaveWallet(event)" class="space-y-3">
-                <input type="text" id="walletName" required placeholder="Nama Dompet (cth: DANA, Bank BCA)" class="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
-                <input type="number" id="walletBalance" required placeholder="Saldo Awal (Rp)" class="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
-                <div class="flex gap-2 pt-1">
-                    <button type="submit" class="w-1/2 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold">Simpan</button>
-                    <button type="button" onclick="closeWalletModal()" class="w-1/2 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Batal</button>
-                </div>
-            </form>
-        </div>
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 bg-[#0b0f19]/90 backdrop-blur-md border-b border-gray-800">
+    <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <h1 class="font-bold text-lg tracking-wide flex items-center gap-2">
+        <span>💰</span> Financial Recording
+      </h1>
+      <div class="flex items-center gap-3">
+        <button class="text-gray-400 hover:text-white"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <button class="text-gray-400 hover:text-white"><i class="fa-regular fa-bell"></i></button>
+      </div>
     </div>
+  </header>
 
-    <!-- MODAL TARGET NABUNG -->
-    <div id="savingsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="glass-card p-5 rounded-2xl w-full max-w-xs space-y-4 border border-slate-700">
-            <h3 class="font-bold text-sm text-white">Tambah Target Nabung</h3>
-            <form id="savingsForm" onsubmit="handleSaveSavings(event)" class="space-y-3">
-                <input type="text" id="savingsTitle" required placeholder="Nama Target (cth: Beli Headset)" class="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
-                <input type="number" id="savingsTarget" required placeholder="Target Nominal (Rp)" class="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
-                <input type="number" id="savingsCurrent" required placeholder="Terkumpul Saat Ini (Rp)" class="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
-                <div class="flex gap-2 pt-1">
-                    <button type="submit" class="w-1/2 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold">Simpan</button>
-                    <button type="button" onclick="closeSavingsModal()" class="w-1/2 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Batal</button>
-                </div>
-            </form>
+  <main class="max-w-md mx-auto px-4 py-4 space-y-5">
+
+    <!-- AUTH SCREEN (LOGIN & REGISTER) -->
+    <section id="authScreen" class="my-10 fade-in">
+      <div class="bg-[#131d31] border border-gray-800 rounded-2xl p-6 shadow-xl">
+        <div class="flex border-b border-gray-800 mb-6">
+          <button id="tabLogin" class="w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500">Masuk</button>
+          <button id="tabRegister" class="w-1/2 py-2 font-bold text-sm text-gray-400">Daftar</button>
         </div>
+
+        <!-- Form Login -->
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-400">Username</label>
+            <input type="text" id="loginUser" required placeholder="Masukkan username" class="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-400">PIN Akses</label>
+            <input type="password" id="loginPin" required placeholder="******" class="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-semibold transition shadow-md">Masuk</button>
+        </form>
+
+        <!-- Form Daftar -->
+        <form id="registerForm" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-400">Username Baru</label>
+            <input type="text" id="regUser" required placeholder="Buat username" class="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-400">Buat PIN</label>
+            <input type="password" id="regPin" required placeholder="******" class="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-semibold transition shadow-md">Buat Akun Baru</button>
+        </form>
+
+        <div id="authMsg" class="text-xs text-center mt-3 font-medium hidden"></div>
+      </div>
+    </section>
+
+    <!-- MAIN DASHBOARD -->
+    <section id="appScreen" class="hidden space-y-5 fade-in">
+      
+      <!-- KARTU SALDO TOTAL -->
+      <div class="bg-gradient-to-br from-[#131d31] to-[#1e293b] border border-gray-800 p-5 rounded-2xl shadow-lg relative overflow-hidden">
+        <div class="absolute -right-6 -bottom-6 opacity-10 text-brand-500 text-8xl"><i class="fa-solid fa-wallet"></i></div>
+        <p class="text-xs text-gray-400 font-medium mb-1">Saldo Total</p>
+        <h2 id="totalBalance" class="text-2xl font-bold text-white mb-4">Rp 0</h2>
+        <div class="flex items-center justify-between text-xs pt-3 border-t border-gray-800/60">
+          <div>
+            <span id="monthIncome" class="text-emerald-400 font-semibold">+Rp 0</span>
+            <p class="text-gray-400 text-[10px]">↑ Bulan ini</p>
+          </div>
+          <div class="text-right">
+            <span id="monthExpense" class="text-rose-400 font-semibold">Rp 0</span>
+            <p class="text-gray-400 text-[10px]">↓ Bulan ini</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOMPET TERPISAH -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm">Dompet Terpisah</h3>
+          <button onclick="openWalletModal()" class="text-xs text-brand-500 hover:underline">+ Tambah Dompet</button>
+        </div>
+        <div id="walletList" class="grid grid-cols-2 gap-3">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- TARGET NABUNG -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm">Target Nabung</h3>
+          <button onclick="openSavingsModal()" class="text-xs text-brand-500 hover:underline">+ Tambah Target</button>
+        </div>
+        <div id="savingsList" class="space-y-3">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- CATAT TRANSAKSI CEPAT -->
+      <div class="bg-[#131d31] border border-gray-800 p-4 rounded-2xl shadow-sm">
+        <h3 class="font-bold text-sm mb-3"><i class="fa-solid fa-circle-plus text-brand-500 mr-1"></i> Catat Transaksi Baru</h3>
+        <form id="transactionForm" class="space-y-3">
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btnIncome" onclick="setType('income')" class="py-1.5 rounded-xl text-xs font-semibold border border-brand-500 text-brand-500 bg-brand-500/10">Pemasukan</button>
+            <button type="button" id="btnExpense" onclick="setType('expense')" class="py-1.5 rounded-xl text-xs font-semibold border border-gray-700 text-gray-400">Pengeluaran</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="amountInput" required placeholder="Jumlah (Rp)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+            <input type="text" id="categoryInput" required placeholder="Kategori (Makan, Gaji)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="date" id="dateInput" required class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+            <input type="text" id="noteInput" placeholder="Catatan (opsional)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+          </div>
+          <button type="submit" class="w-full py-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-xl text-xs transition">Simpan Transaksi</button>
+        </form>
+      </div>
+
+      <!-- RIWAYAT TRANSAKSI -->
+      <div class="bg-[#131d31] border border-gray-800 p-4 rounded-2xl shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm">Riwayat Transaksi</h3>
+          <button id="btnExportExcel" onclick="exportToExcel()" class="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg font-medium"><i class="fa-solid fa-file-excel mr-1"></i> Excel</button>
+        </div>
+        <div class="overflow-x-auto max-h-48 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <tbody id="transactionList" class="divide-y divide-gray-800"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- BOTTOM NAVIGATION BAR (HANYA MUNCUL JIKA SUDAH LOGIN) -->
+  <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-[#0b0f19]/95 backdrop-blur-md border-t border-gray-800 z-40 max-w-md mx-auto">
+    <div class="flex justify-around py-2.5 text-gray-400 text-xs font-medium">
+      <button onclick="switchNav('beranda')" class="flex flex-col items-center text-brand-500">
+        <i class="fa-solid fa-house text-base mb-1"></i>
+        <span>Beranda</span>
+      </button>
+      <button onclick="switchNav('transaksi')" class="flex flex-col items-center hover:text-white">
+        <i class="fa-solid fa-list-check text-base mb-1"></i>
+        <span>Transaksi</span>
+      </button>
+      <button onclick="switchNav('target')" class="flex flex-col items-center hover:text-white">
+        <i class="fa-solid fa-bullseye text-base mb-1"></i>
+        <span>Target</span>
+      </button>
+      <button onclick="switchNav('dompet')" class="flex flex-col items-center hover:text-white">
+        <i class="fa-solid fa-wallet text-base mb-1"></i>
+        <span>Dompet</span>
+      </button>
+      <button onclick="logout()" class="flex flex-col items-center hover:text-rose-400">
+        <i class="fa-solid fa-right-from-bracket text-base mb-1"></i>
+        <span>Keluar</span>
+      </button>
     </div>
+  </nav>
 
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="fixed top-4 right-4 z-50 transform -translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-2">
-        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
-        <span id="toastMsg">Pesan Notifikasi</span>
+  <!-- MODAL TAMBAH DOMPET -->
+  <div id="walletModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-[#131d31] border border-gray-800 p-5 rounded-2xl w-full max-w-xs space-y-4">
+      <h3 class="font-bold text-sm">Tambah Dompet Baru</h3>
+      <form id="walletForm" class="space-y-3">
+        <input type="text" id="walletName" required placeholder="Nama Dompet (cth: DANA)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <input type="number" id="walletBalance" required placeholder="Saldo Awal (Rp)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <div class="flex gap-2">
+          <button type="submit" class="w-1/2 py-2 bg-brand-500 text-white rounded-xl text-xs font-semibold">Simpan</button>
+          <button type="button" onclick="closeWalletModal()" class="w-1/2 py-2 bg-gray-800 text-gray-300 rounded-xl text-xs font-semibold">Batal</button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <script>
-        // Supabase Setup
-        const SUPABASE_URL = 'https://mlsvsfedblnazhiitacw.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_RffE_kjkKOX4JAhvlaYIBw_x3jRkyir';
-        
-        let db = null;
-        try {
-            if (window.supabase) {
-                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            }
-        } catch (e) {
-            console.log("Supabase client running in fallback mode");
+  <!-- MODAL TARGET NABUNG -->
+  <div id="savingsModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-[#131d31] border border-gray-800 p-5 rounded-2xl w-full max-w-xs space-y-4">
+      <h3 class="font-bold text-sm">Tambah Target Nabung</h3>
+      <form id="savingsForm" class="space-y-3">
+        <input type="text" id="savingsTitle" required placeholder="Nama Target (cth: Beli Headset)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <input type="number" id="savingsTarget" required placeholder="Target Nominal (Rp)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <input type="number" id="savingsCurrent" required placeholder="Terkumpul Saat Ini (Rp)" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-700 bg-gray-900 focus:outline-none focus:border-brand-500">
+        <div class="flex gap-2">
+          <button type="submit" class="w-1/2 py-2 bg-brand-500 text-white rounded-xl text-xs font-semibold">Simpan</button>
+          <button type="button" onclick="closeSavingsModal()" class="w-1/2 py-2 bg-gray-800 text-gray-300 rounded-xl text-xs font-semibold">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT UTAMA & SUPABASE LOGIC -->
+  <script>
+    const SUPABASE_URL = 'https://mlsvsfedblnazhiitacw.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_RffE_kjkKOX4JAhvlaYIBw_x3jRkyir';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = localStorage.getItem('bby_active_user') || null;
+    let transactions = [];
+    let wallets = [];
+    let savings = [];
+    let currentType = 'income';
+
+    const authScreen = document.getElementById('authScreen');
+    const appScreen = document.getElementById('appScreen');
+    const bottomNav = document.getElementById('bottomNav');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const authMsg = document.getElementById('authMsg');
+
+    if (document.getElementById('dateInput')) {
+      document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+    }
+
+    // Switch Tab Auth
+    tabLogin.addEventListener('click', () => {
+      tabLogin.className = "w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500";
+      tabRegister.className = "w-1/2 py-2 font-bold text-sm text-gray-400";
+      loginForm.classList.remove('hidden');
+      registerForm.classList.add('hidden');
+      authMsg.classList.add('hidden');
+    });
+
+    tabRegister.addEventListener('click', () => {
+      tabRegister.className = "w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500";
+      tabLogin.className = "w-1/2 py-2 font-bold text-sm text-gray-400";
+      registerForm.classList.remove('hidden');
+      loginForm.classList.add('hidden');
+      authMsg.classList.add('hidden');
+    });
+
+    // Handle Register
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('regUser').value.trim().toLowerCase();
+      const pin = document.getElementById('regPin').value;
+      
+      const { data: existingUser } = await db.from('users').select('*').eq('username', user).maybeSingle();
+      
+      if (existingUser) {
+        authMsg.innerText = "Username sudah ada! Gunakan nama lain.";
+        authMsg.className = "text-xs text-center mt-3 text-rose-500 font-medium";
+        authMsg.classList.remove('hidden');
+        return;
+      }
+
+      const { error } = await db.from('users').insert([{ username: user, pin: pin }]);
+      if (error) {
+        authMsg.innerText = "Gagal mendaftar. Matikan RLS di Supabase.";
+        authMsg.className = "text-xs text-center mt-3 text-rose-500 font-medium";
+        authMsg.classList.remove('hidden');
+      } else {
+        authMsg.innerText = "Akun berhasil dibuat! Silakan masuk.";
+        authMsg.className = "text-xs text-center mt-3 text-emerald-500 font-medium";
+        authMsg.classList.remove('hidden');
+        tabLogin.click();
+      }
+    });
+
+    // Handle Login
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('loginUser').value.trim().toLowerCase();
+      const pin = document.getElementById('loginPin').value;
+
+      const { data } = await db.from('users').select('*').eq('username', user).eq('pin', pin).maybeSingle();
+
+      if (!data) {
+        authMsg.innerText = "Username atau PIN Salah!";
+        authMsg.className = "text-xs text-center mt-3 text-rose-500 font-medium";
+        authMsg.classList.remove('hidden');
+      } else {
+        currentUser = user;
+        localStorage.setItem('bby_active_user', currentUser);
+        initDashboard();
+      }
+    });
+
+    // Logout
+    function logout() {
+      localStorage.removeItem('bby_active_user');
+      currentUser = null;
+      transactions = [];
+      wallets = [];
+      savings = [];
+      
+      if(appScreen) appScreen.classList.add('hidden');
+      if(bottomNav) bottomNav.classList.add('hidden');
+      if(authScreen) authScreen.classList.remove('hidden');
+    }
+
+    // Init Dashboard
+    async function initDashboard() {
+      if(authScreen) authScreen.classList.add('hidden');
+      if(appScreen) appScreen.classList.remove('hidden');
+      if(bottomNav) bottomNav.classList.remove('hidden');
+      await loadData();
+    }
+
+    // Load Data Terfilter per Username (Akun Baru Mulai Dari Nol)
+    async function loadData() {
+      if (!currentUser) return;
+
+      transactions = [];
+      wallets = [];
+      savings = [];
+
+      const [txRes, walRes, savRes] = await Promise.all([
+        db.from('transactions').select('*').eq('username', currentUser).order('date', { ascending: false }),
+        db.from('wallets').select('*').eq('username', currentUser),
+        db.from('savings_goals').select('*').eq('username', currentUser)
+      ]);
+
+      transactions = txRes.data || [];
+      wallets = walRes.data || [];
+      savings = savRes.data || [];
+
+      renderAll();
+    }
+
+    function setType(type) {
+      currentType = type;
+      if(type === 'income') {
+        document.getElementById('btnIncome').className = "py-1.5 rounded-xl text-xs font-semibold border border-brand-500 text-brand-500 bg-brand-500/10";
+        document.getElementById('btnExpense').className = "py-1.5 rounded-xl text-xs font-semibold border border-gray-700 text-gray-400";
+      } else {
+        document.getElementById('btnExpense').className = "py-1.5 rounded-xl text-xs font-semibold border border-rose-500 text-rose-500 bg-rose-500/10";
+        document.getElementById('btnIncome').className = "py-1.5 rounded-xl text-xs font-semibold border border-gray-700 text-gray-400";
+      }
+    }
+
+    function formatRupiah(num) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num || 0);
+    }
+
+    function renderAll() {
+      let totalInc = 0, totalExp = 0;
+      const list = document.getElementById('transactionList');
+      if (list) list.innerHTML = '';
+
+      if (transactions.length === 0 && list) {
+        list.innerHTML = `<tr><td colspan="2" class="py-4 text-center text-gray-500 text-xs">Belum ada transaksi. Silakan catat transaksi baru.</td></tr>`;
+      } else if (list) {
+        transactions.forEach(t => {
+          if(t.type === 'income') totalInc += Number(t.amount);
+          else totalExp += Number(t.amount);
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="py-2"><span class="block font-medium">${t.category}</span><span class="text-[10px] text-gray-400">${t.date}</span></td>
+            <td class="py-2 text-right font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">${t.type === 'income' ? '+' : '-'}${formatRupiah(t.amount)}</td>
+          `;
+          list.appendChild(tr);
+        });
+      }
+
+      document.getElementById('totalBalance').innerText = formatRupiah(totalInc - totalExp);
+      document.getElementById('monthIncome').innerText = `+${formatRupiah(totalInc)}`;
+      document.getElementById('monthExpense').innerText = formatRupiah(totalExp);
+
+      // Render Dompet Terpisah
+      const walContainer = document.getElementById('walletList');
+      if (walContainer) {
+        walContainer.innerHTML = '';
+        if (wallets.length === 0) {
+          walContainer.innerHTML = `<p class="col-span-2 text-xs text-gray-500 italic">Belum ada dompet terpisah.</p>`;
+        } else {
+          wallets.forEach(w => {
+            walContainer.innerHTML += `
+              <div class="bg-[#131d31] border border-gray-800 p-3 rounded-xl">
+                <p class="text-xs text-gray-400">${w.name}</p>
+                <h4 class="font-bold text-sm text-white">${formatRupiah(w.balance)}</h4>
+              </div>
+            `;
+          });
         }
+      }
 
-        // Global State
-        let currentUser = localStorage.getItem('fr_active_user') || null;
-        let transactions = JSON.parse(localStorage.getItem('fr_local_tx')) || [];
-        let wallets = JSON.parse(localStorage.getItem('fr_local_wallets')) || [
-            { id: 1, name: 'Cash / Tunai', balance: 500000 },
-            { id: 2, name: 'DANA / E-Wallet', balance: 1250000 }
-        ];
-        let savings = JSON.parse(localStorage.getItem('fr_local_savings')) || [
-            { id: 1, title: 'Beli Headset Gaming', target_amount: 800000, current_amount: 450000 }
-        ];
-        let currentTxType = 'income';
-        let chartInstance = null;
-
-        // On Load
-        window.onload = function() {
-            document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
-            if (currentUser) {
-                showApp();
-            } else {
-                showAuth();
-            }
-        };
-
-        // Navigation Page Switcher
-        function switchPage(pageId) {
-            const pages = ['beranda', 'transaksi', 'target', 'dompet'];
-            pages.forEach(p => {
-                const el = document.getElementById('page' + p.charAt(0).toUpperCase() + p.slice(1));
-                const navBtn = document.getElementById('nav' + p.charAt(0).toUpperCase() + p.slice(1));
-                if (el) el.classList.add('hidden');
-                if (navBtn) {
-                    navBtn.className = "flex-1 flex flex-col items-center py-1 hover:text-white font-medium text-[10px] transition text-slate-400";
-                }
-            });
-
-            const activePage = document.getElementById('page' + pageId.charAt(0).toUpperCase() + pageId.slice(1));
-            const activeNav = document.getElementById('nav' + pageId.charAt(0).toUpperCase() + pageId.slice(1));
-            
-            if (activePage) activePage.classList.remove('hidden');
-            if (activeNav) activeNav.className = "flex-1 flex flex-col items-center py-1 text-emerald-400 font-bold text-[10px]";
-
-            if(pageId === 'beranda') renderChart();
+      // Render Target Nabung
+      const savContainer = document.getElementById('savingsList');
+      if (savContainer) {
+        savContainer.innerHTML = '';
+        if (savings.length === 0) {
+          savContainer.innerHTML = `<p class="text-xs text-gray-500 italic">Belum ada target nabung.</p>`;
+        } else {
+          savings.forEach(s => {
+            const pct = Math.min(100, Math.round((s.current_amount / s.target_amount) * 100));
+            savContainer.innerHTML += `
+              <div class="bg-[#131d31] border border-gray-800 p-3.5 rounded-xl space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-white">${s.title}</span>
+                  <span class="text-gray-400">${formatRupiah(s.current_amount)} / ${formatRupiah(s.target_amount)}</span>
+                </div>
+                <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                  <div class="bg-brand-500 h-full rounded-full" style="width: ${pct}%"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-gray-400">
+                  <span>${pct}% tercapai</span>
+                  <span>Target Nabung</span>
+                </div>
+              </div>
+            `;
+          });
         }
+      }
+    }
 
-        // Auth Functions
-        function switchAuthTab(tab) {
-            const loginForm = document.getElementById('loginForm');
-            const registerForm = document.getElementById('registerForm');
-            const tabLoginBtn = document.getElementById('tabLoginBtn');
-            const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+    // Modal Controls
+    function openWalletModal() { document.getElementById('walletModal').classList.remove('hidden'); }
+    function closeWalletModal() { document.getElementById('walletModal').classList.add('hidden'); }
+    function openSavingsModal() { document.getElementById('savingsModal').classList.remove('hidden'); }
+    function closeSavingsModal() { document.getElementById('savingsModal').classList.add('hidden'); }
 
-            if (tab === 'login') {
-                loginForm.classList.remove('hidden');
-                registerForm.classList.add('hidden');
-                tabLoginBtn.classList.add('active');
-                tabRegisterBtn.classList.remove('active');
-            } else {
-                loginForm.classList.add('hidden');
-                registerForm.classList.remove('hidden');
-                tabRegisterBtn.classList.add('active');
-                tabLoginBtn.classList.remove('active');
-            }
-        }
+    document.getElementById('walletForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await db.from('wallets').insert([{ username: currentUser, name: document.getElementById('walletName').value, balance: document.getElementById('walletBalance').value }]);
+      closeWalletModal(); loadData();
+    });
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            const username = document.getElementById('loginUsername').value.trim().toLowerCase();
-            const pin = document.getElementById('loginPin').value;
+    document.getElementById('savingsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await db.from('savings_goals').insert([{ username: currentUser, title: document.getElementById('savingsTitle').value, target_amount: document.getElementById('savingsTarget').value, current_amount: document.getElementById('savingsCurrent').value }]);
+      closeSavingsModal(); loadData();
+    });
 
-            // Check Supabase if connected
-            if (db) {
-                try {
-                    const { data, error } = await db.from('users').select('*').eq('username', username).eq('pin', pin).maybeSingle();
-                    if (data) {
-                        currentUser = username;
-                        localStorage.setItem('fr_active_user', currentUser);
-                        showToast('Berhasil masuk!', 'success');
-                        showApp();
-                        return;
-                    }
-                } catch(err) {
-                    console.log("Fallback to local auth");
-                }
-            }
+    document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await db.from('transactions').insert([{
+        username: currentUser,
+        type: currentType,
+        amount: document.getElementById('amountInput').value,
+        category: document.getElementById('categoryInput').value,
+        date: document.getElementById('dateInput').value,
+        note: document.getElementById('noteInput').value
+      }]);
+      document.getElementById('transactionForm').reset();
+      document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+      loadData();
+    });
 
-            // Local Auth Fallback
-            currentUser = username;
-            localStorage.setItem('fr_active_user', currentUser);
-            showToast('Berhasil masuk!', 'success');
-            showApp();
-        }
+    function exportToExcel() {
+      if (transactions.length === 0) { alert('Tidak ada transaksi untuk diekspor!'); return; }
+      const data = transactions.map(t => ({
+        Tanggal: t.date,
+        Tipe: t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+        Kategori: t.category,
+        Nominal: t.amount,
+        Catatan: t.note || ''
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+      XLSX.writeFile(wb, `Laporan_Keuangan_${currentUser}.xlsx`);
+    }
 
-        async function handleRegister(e) {
-            e.preventDefault();
-            const username = document.getElementById('regUsername').value.trim().toLowerCase();
-            const pin = document.getElementById('regPin').value;
+    function switchNav(navName) {
+      alert(`Menu ${navName} siap dikembangkan lebih lanjut!`);
+    }
 
-            if (db) {
-                try {
-                    await db.from('users').insert([{ username, pin }]);
-                } catch(err) {}
-            }
-
-            currentUser = username;
-            localStorage.setItem('fr_active_user', currentUser);
-            showToast('Akun berhasil dibuat!', 'success');
-            showApp();
-        }
-
-        function loginAsGuest() {
-            currentUser = 'Tamu_' + Math.floor(Math.random() * 1000);
-            localStorage.setItem('fr_active_user', currentUser);
-            showToast('Masuk sebagai ' + currentUser, 'info');
-            showApp();
-        }
-
-        function handleLogout() {
-            localStorage.removeItem('fr_active_user');
-            currentUser = null;
-            showAuth();
-            showToast('Berhasil keluar', 'info');
-        }
-
-        function showAuth() {
-            document.getElementById('authScreen').classList.remove('hidden');
-            document.getElementById('appScreen').classList.add('hidden');
-            document.getElementById('bottomNav').classList.add('hidden');
-        }
-
-        function showApp() {
-            document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('appScreen').classList.remove('hidden');
-            document.getElementById('bottomNav').classList.remove('hidden');
-            document.getElementById('userBadge').textContent = currentUser;
-
-            switchPage('beranda');
-            renderAll();
-        }
-
-        // Transactions & Wallet Handlers
-        function setType(type) {
-            currentTxType = type;
-            const btnInc = document.getElementById('btnIncome');
-            const btnExp = document.getElementById('btnExpense');
-
-            if(type === 'income') {
-                btnInc.className = "py-2 rounded-xl text-xs font-bold border border-emerald-500 text-emerald-400 bg-emerald-500/10";
-                btnExp.className = "py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-400";
-            } else {
-                btnExp.className = "py-2 rounded-xl text-xs font-bold border border-rose-500 text-rose-400 bg-rose-500/10";
-                btnInc.className = "py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-400";
-            }
-        }
-
-        function handleSaveTransaction(e) {
-            e.preventDefault();
-            const amount = parseFloat(document.getElementById('amountInput').value);
-            const category = document.getElementById('categoryInput').value.trim();
-            const walletName = document.getElementById('walletSelect').value;
-            const date = document.getElementById('dateInput').value;
-            const note = document.getElementById('noteInput').value.trim();
-
-            const newTx = {
-                id: Date.now(),
-                type: currentTxType,
-                amount,
-                category,
-                wallet: walletName,
-                date,
-                note
-            };
-
-            transactions.unshift(newTx);
-            localStorage.setItem('fr_local_tx', JSON.stringify(transactions));
-
-            // Update Wallet Balance
-            const targetWallet = wallets.find(w => w.name === walletName);
-            if (targetWallet) {
-                if (currentTxType === 'income') targetWallet.balance += amount;
-                else targetWallet.balance -= amount;
-                localStorage.setItem('fr_local_wallets', JSON.stringify(wallets));
-            }
-
-            document.getElementById('transactionForm').reset();
-            document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
-            setType('income');
-
-            showToast('Transaksi berhasil disimpan!', 'success');
-            renderAll();
-        }
-
-        function deleteTransaction(id) {
-            transactions = transactions.filter(t => t.id !== id);
-            localStorage.setItem('fr_local_tx', JSON.stringify(transactions));
-            renderAll();
-            showToast('Transaksi dihapus', 'info');
-        }
-
-        // Modals Logic
-        function openWalletModal() { document.getElementById('walletModal').classList.remove('hidden'); }
-        function closeWalletModal() { document.getElementById('walletModal').classList.add('hidden'); }
-        function openSavingsModal() { document.getElementById('savingsModal').classList.remove('hidden'); }
-        function closeSavingsModal() { document.getElementById('savingsModal').classList.add('hidden'); }
-
-        function handleSaveWallet(e) {
-            e.preventDefault();
-            const name = document.getElementById('walletName').value.trim();
-            const balance = parseFloat(document.getElementById('walletBalance').value);
-
-            wallets.push({ id: Date.now(), name, balance });
-            localStorage.setItem('fr_local_wallets', JSON.stringify(wallets));
-            
-            closeWalletModal();
-            document.getElementById('walletForm').reset();
-            renderAll();
-            showToast('Dompet berhasil ditambahkan', 'success');
-        }
-
-        function handleSaveSavings(e) {
-            e.preventDefault();
-            const title = document.getElementById('savingsTitle').value.trim();
-            const target_amount = parseFloat(document.getElementById('savingsTarget').value);
-            const current_amount = parseFloat(document.getElementById('savingsCurrent').value);
-
-            savings.push({ id: Date.now(), title, target_amount, current_amount });
-            localStorage.setItem('fr_local_savings', JSON.stringify(savings));
-
-            closeSavingsModal();
-            document.getElementById('savingsForm').reset();
-            renderAll();
-            showToast('Target nabung disimpan', 'success');
-        }
-
-        // Render Functions
-        function renderAll() {
-            let totalIncome = 0;
-            let totalExpense = 0;
-
-            // Render Transactions List
-            const txList = document.getElementById('transactionList');
-            txList.innerHTML = '';
-
-            if (transactions.length === 0) {
-                txList.innerHTML = `<tr><td class="py-4 text-center text-slate-500 font-medium">Belum ada transaksi.</td></tr>`;
-            } else {
-                transactions.forEach(t => {
-                    if (t.type === 'income') totalIncome += t.amount;
-                    else totalExpense += t.amount;
-
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-800/40 transition";
-                    tr.innerHTML = `
-                        <td class="py-2.5">
-                            <span class="block font-bold text-white">${escapeHtml(t.category)}</span>
-                            <span class="text-[10px] text-slate-400">${t.date} • ${escapeHtml(t.wallet || 'Dompet')}</span>
-                        </td>
-                        <td class="py-2.5 text-right">
-                            <span class="block font-extrabold ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">
-                                ${t.type === 'income' ? '+' : '-'} ${formatRupiah(t.amount)}
-                            </span>
-                            <button onclick="deleteTransaction(${t.id})" class="text-[10px] text-slate-500 hover:text-rose-400 transition">Hapus</button>
-                        </td>
-                    `;
-                    txList.appendChild(tr);
-                });
-            }
-
-            // Calculate Total Balance
-            let walletTotal = wallets.reduce((acc, w) => acc + w.balance, 0);
-            document.getElementById('totalBalance').textContent = formatRupiah(walletTotal);
-            document.getElementById('monthIncome').textContent = `+${formatRupiah(totalIncome)}`;
-            document.getElementById('monthExpense').textContent = `-${formatRupiah(totalExpense)}`;
-
-            // Render Wallets
-            const walletList = document.getElementById('walletList');
-            const fullWalletList = document.getElementById('fullWalletList');
-            const walletSelect = document.getElementById('walletSelect');
-
-            walletList.innerHTML = '';
-            fullWalletList.innerHTML = '';
-            walletSelect.innerHTML = '';
-
-            wallets.forEach(w => {
-                walletList.innerHTML += `
-                    <div class="glass-card p-3 rounded-2xl border border-slate-800/80">
-                        <span class="text-[10px] text-slate-400 block font-medium">${escapeHtml(w.name)}</span>
-                        <h4 class="font-extrabold text-xs text-white mt-0.5">${formatRupiah(w.balance)}</h4>
-                    </div>
-                `;
-
-                fullWalletList.innerHTML += `
-                    <div class="glass-card p-4 rounded-2xl flex justify-between items-center border border-slate-800">
-                        <div>
-                            <h4 class="font-bold text-xs text-white">${escapeHtml(w.name)}</h4>
-                            <span class="text-[10px] text-slate-400">Saldo Dompet</span>
-                        </div>
-                        <span class="font-extrabold text-sm text-emerald-400">${formatRupiah(w.balance)}</span>
-                    </div>
-                `;
-
-                walletSelect.innerHTML += `<option value="${escapeHtml(w.name)}">${escapeHtml(w.name)}</option>`;
-            });
-
-            // Render Savings Goals
-            const savingsList = document.getElementById('savingsList');
-            savingsList.innerHTML = '';
-
-            if(savings.length === 0) {
-                savingsList.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Belum ada target nabung.</p>`;
-            } else {
-                savings.forEach(s => {
-                    const pct = Math.min(100, Math.round((s.current_amount / s.target_amount) * 100));
-                    savingsList.innerHTML += `
-                        <div class="glass-card p-4 rounded-2xl space-y-2 border border-slate-800">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="font-bold text-white">${escapeHtml(s.title)}</span>
-                                <span class="text-slate-400 text-[11px] font-semibold">${formatRupiah(s.current_amount)} / ${formatRupiah(s.target_amount)}</span>
-                            </div>
-                            <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-                                <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
-                            </div>
-                            <div class="flex justify-between text-[10px] text-slate-400 font-medium">
-                                <span>Progress: ${pct}%</span>
-                                <span class="text-emerald-400 font-bold">${pct >= 100 ? 'Tercapai! 🎉' : 'Dalam Proses'}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-
-            renderChart();
-        }
-
-        // Render Chart.js
-        function renderChart() {
-            const ctx = document.getElementById('expenseChart');
-            if(!ctx) return;
-
-            const categories = {};
-            transactions.filter(t => t.type === 'expense').forEach(t => {
-                categories[t.category] = (categories[t.category] || 0) + t.amount;
-            });
-
-            const labels = Object.keys(categories);
-            const data = Object.values(categories);
-
-            if(chartInstance) chartInstance.destroy();
-
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels.length > 0 ? labels : ['Belum Ada Data'],
-                    datasets: [{
-                        data: data.length > 0 ? data : [1],
-                        backgroundColor: data.length > 0 ? ['#22c55e', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6'] : ['#1e293b'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } }
-                    },
-                    cutout: '70%'
-                }
-            });
-        }
-
-        // Export Excel
-        function exportToExcel() {
-            if(transactions.length === 0) {
-                showToast('Tidak ada transaksi untuk diexport', 'info');
-                return;
-            }
-            const ws = XLSX.utils.json_to_sheet(transactions);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
-            XLSX.writeFile(wb, `Financial_Recording_${currentUser}.xlsx`);
-            showToast('File Excel berhasil didownload', 'success');
-        }
-
-        // Helper Utilities
-        function formatRupiah(num) {
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num || 0);
-        }
-
-        function escapeHtml(str) {
-            return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            const msg = document.getElementById('toastMsg');
-            const icon = document.getElementById('toastIcon');
-
-            msg.textContent = message;
-            icon.className = type === 'success' ? "fa-solid fa-circle-check text-emerald-400" : "fa-solid fa-circle-info text-blue-400";
-
-            toast.classList.remove('-translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('-translate-y-20', 'opacity-0');
-            }, 2500);
-        }
-    </script>
+    // Pengecekan Login Awal
+    if (currentUser) {
+      initDashboard();
+    } else {
+      logout();
+    }
+  </script>
 </body>
 </html>

@@ -39,7 +39,7 @@
   </style>
 </head>
 
-<body class="min-h-screen font-sans antialiased text-gray-200">
+<body class="min-h-screen font-sans antialiased text-gray-200 pb-28">
 
   <!-- ================= LOADING OVERLAY ================= -->
   <div id="loadingOverlay" class="hidden fixed inset-0 bg-[#0b0f19]/80 backdrop-blur-md z-50 flex flex-col items-center justify-center gap-3">
@@ -115,255 +115,217 @@
   </section>
 
 
-  <!-- ================= LAYAR UTAMA DASHBOARD ================= -->
-  <div id="appScreen" class="hidden min-h-screen lg:flex fade-in">
+  <!-- ================= LAYAR UTAMA DASHBOARD FULL SCREEN ================= -->
+  <div id="appScreen" class="hidden min-h-screen flex-col fade-in">
 
-    <!-- DESKTOP SIDEBAR NAVIGATION -->
-    <aside class="hidden lg:flex flex-col w-72 bg-[#0b0f19] border-r border-gray-800/80 p-6 fixed h-full z-40">
-      <div class="flex items-center gap-3.5 px-2 mb-8">
-        <div class="w-10 h-10 bg-brand-500/10 border border-brand-500/30 rounded-2xl flex items-center justify-center text-brand-500 shadow-inner">
-          <i class="fa-solid fa-wallet text-base"></i>
+    <!-- TOP HEADER FULL WIDTH -->
+    <header class="sticky top-0 z-30 bg-[#0b0f19]/80 backdrop-blur-xl border-b border-gray-800/80">
+      <div class="w-full px-6 lg:px-12 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-500">
+            <i class="fa-solid fa-wallet text-sm"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-base tracking-wide text-white">Financial Recording</h1>
+            <p class="text-[10px] text-gray-400 font-medium hidden sm:block">Enterprise Dashboard System</p>
+          </div>
         </div>
-        <div>
-          <h1 class="font-bold text-sm tracking-wide text-white">Financial Recording</h1>
-          <p class="text-[10px] text-gray-400 font-medium">Enterprise Edition</p>
+
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 bg-gray-900 border border-gray-800 px-4 py-1.5 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="activeUserBadge" class="text-xs text-brand-500 font-bold capitalize">User</span>
+          </div>
+          <button onclick="logout()" class="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Keluar</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT FULL SCREEN -->
+    <main class="w-full px-6 lg:px-12 py-8 space-y-8 flex-1">
+
+      <!-- ================= 1. VIEW BERANDA ================= -->
+      <div id="viewBeranda" class="space-y-8">
+        
+        <!-- TOP METRICS CARDS 3 KOLOM SEJAJAR (FULL WIDTH) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-gradient-to-br from-[#131d31] to-[#1e293b] border border-gray-800/80 p-6 rounded-3xl shadow-xl relative overflow-hidden flex flex-col justify-between">
+            <div class="absolute -right-6 -bottom-6 opacity-10 text-brand-500 text-8xl"><i class="fa-solid fa-wallet"></i></div>
+            <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Total Saldo Keuangan</p>
+            <h2 id="totalBalance" class="text-3xl lg:text-5xl font-black text-white tracking-tight my-2">Rp 0</h2>
+            <p class="text-[11px] text-gray-400 mt-2">Update otomatis berdasarkan transaksi</p>
+          </div>
+
+          <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Pemasukan</p>
+              <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-down"></i></span>
+            </div>
+            <h2 id="monthIncome" class="text-2xl lg:text-4xl font-bold text-emerald-400 tracking-tight my-2">+Rp 0</h2>
+            <p class="text-[11px] text-gray-400">Total akumulasi transaksi masuk</p>
+          </div>
+
+          <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Pengeluaran</p>
+              <span class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-up"></i></span>
+            </div>
+            <h2 id="monthExpense" class="text-2xl lg:text-4xl font-bold text-rose-400 tracking-tight my-2">Rp 0</h2>
+            <p class="text-[11px] text-gray-400">Total akumulasi transaksi keluar</p>
+          </div>
+        </div>
+
+        <!-- MAIN GRID 2 KOLOM SEIMBANG -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          <!-- KOLOM KIRI: FORM & TABEL TRANSAKSI (7 Kolom) -->
+          <div class="lg:col-span-7 space-y-6">
+            <div class="bg-[#131d31]/90 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
+              <h3 class="font-bold text-sm text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-plus text-brand-500"></i> Catat Transaksi Cepat</h3>
+              <form id="transactionForm" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <button type="button" id="btnIncome" onclick="setType('income')" class="py-2.5 rounded-xl text-xs font-bold border border-brand-500 text-brand-500 bg-brand-500/10 shadow-sm">Pemasukan</button>
+                  <button type="button" id="btnExpense" onclick="setType('expense')" class="py-2.5 rounded-xl text-xs font-bold border border-gray-800 text-gray-400">Pengeluaran</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Nominal (Rp)</label>
+                    <input type="number" id="amountInput" required placeholder="0" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Kategori</label>
+                    <input type="text" id="categoryInput" required placeholder="Gaji, Makan, Investasi" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Tanggal</label>
+                    <input type="date" id="dateInput" required class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Catatan</label>
+                    <input type="text" id="noteInput" placeholder="Keterangan (opsional)" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
+                  </div>
+                </div>
+                <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 active:scale-[0.99] text-white font-bold rounded-xl text-xs transition shadow-lg shadow-brand-500/20">Simpan Transaksi</button>
+              </form>
+            </div>
+
+            <div class="bg-[#131d31]/90 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-sm text-white">Riwayat Transaksi</h3>
+                <button onclick="exportToExcel()" class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-semibold hover:bg-emerald-500/30 transition">
+                  <i class="fa-solid fa-file-excel mr-1"></i> Excel
+                </button>
+              </div>
+              <div class="overflow-x-auto max-h-[380px] overflow-y-auto pr-1">
+                <table class="w-full text-left text-xs">
+                  <thead>
+                    <tr class="border-b border-gray-800 text-gray-400">
+                      <th class="pb-3 font-semibold">Kategori & Catatan</th>
+                      <th class="pb-3 font-semibold">Tanggal</th>
+                      <th class="pb-3 font-semibold text-right">Nominal</th>
+                    </tr>
+                  </thead>
+                  <tbody id="transactionList" class="divide-y divide-gray-800/60"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- KOLOM KANAN: DOMPET & TARGET NABUNG (5 Kolom) -->
+          <div class="lg:col-span-5 space-y-6">
+            <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-wallet text-brand-500"></i> Dompet / E-Wallet</h3>
+                <button onclick="openWalletModal()" class="text-xs text-brand-500 font-semibold hover:underline">+ Tambah</button>
+              </div>
+              <div id="walletListHome" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3"></div>
+            </div>
+
+            <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-bullseye text-brand-500"></i> Target Nabung</h3>
+                <button onclick="openSavingsModal()" class="text-xs text-brand-500 font-semibold hover:underline">+ Tambah</button>
+              </div>
+              <div id="savingsListHome" class="space-y-3.5"></div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <nav class="space-y-2 flex-1">
-        <button id="sidebarBtn-beranda" onclick="switchNav('beranda')" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-semibold text-brand-500 bg-brand-500/10 border border-brand-500/20 shadow-sm transition">
-          <i class="fa-solid fa-house w-4 text-center"></i> Beranda Utama
-        </button>
-        <button id="sidebarBtn-transaksi" onclick="switchNav('transaksi')" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800/40 transition">
-          <i class="fa-solid fa-list-check w-4 text-center"></i> Kelola Transaksi
-        </button>
-        <button id="sidebarBtn-target" onclick="switchNav('target')" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800/40 transition">
-          <i class="fa-solid fa-bullseye w-4 text-center"></i> Target Nabung
-        </button>
-        <button id="sidebarBtn-dompet" onclick="switchNav('dompet')" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800/40 transition">
-          <i class="fa-solid fa-wallet w-4 text-center"></i> Dompet Terpisah
-        </button>
-      </nav>
-
-      <div class="pt-4 border-t border-gray-800/80">
-        <div class="flex items-center gap-3 px-2 mb-3">
-          <div class="w-9 h-9 rounded-2xl bg-gray-800 border border-gray-700 flex items-center justify-center text-xs text-brand-500 font-bold shadow" id="userAvatar">U</div>
-          <div class="overflow-hidden">
-            <p class="text-xs font-bold text-white capitalize truncate" id="lblUsername">Username</p>
-            <p class="text-[10px] text-emerald-400 font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Online</p>
+      <!-- ================= 2. VIEW TRANSAKSI ================= -->
+      <div id="viewTransaksi" class="space-y-6 hidden">
+        <div class="bg-[#131d31]/90 border border-gray-800/80 p-6 rounded-3xl shadow-xl">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-base text-white">Semua Riwayat Transaksi</h3>
+            <button onclick="exportToExcel()" class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2 rounded-xl font-semibold hover:bg-emerald-500/30 transition">
+              <i class="fa-solid fa-file-excel mr-1.5"></i> Ekspor ke Excel
+            </button>
+          </div>
+          <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-gray-800 text-gray-400">
+                  <th class="pb-3 font-semibold">Kategori & Catatan</th>
+                  <th class="pb-3 font-semibold">Tanggal</th>
+                  <th class="pb-3 font-semibold text-right">Nominal</th>
+                </tr>
+              </thead>
+              <tbody id="transactionListFull" class="divide-y divide-gray-800/60"></tbody>
+            </table>
           </div>
         </div>
-        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition shadow-sm">
-          <i class="fa-solid fa-right-from-bracket"></i> Keluar Akun
-        </button>
       </div>
-    </aside>
 
-    <!-- MAIN CONTENT AREA DESKTOP -->
-    <div class="flex-1 lg:ml-72 pb-24 lg:pb-10">
-      
-      <!-- DESKTOP TOP HEADER BAR -->
-      <header class="sticky top-0 z-30 bg-[#0b0f19]/80 backdrop-blur-xl border-b border-gray-800/80">
-        <div class="max-w-7xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
-          <div class="flex items-center gap-2.5 lg:hidden">
-            <div class="w-8 h-8 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-500">
-              <i class="fa-solid fa-wallet text-xs"></i>
-            </div>
-            <h1 class="font-bold text-sm tracking-wide text-white">Financial App</h1>
+      <!-- ================= 3. VIEW TARGET NABUNG ================= -->
+      <div id="viewTarget" class="space-y-6 hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-lg text-white">Target Nabung</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Kelola impian dan target akumulasi tabungan Anda</p>
           </div>
-          
-          <h2 id="desktopTitle" class="hidden lg:block font-extrabold text-xl tracking-tight text-white">Beranda Utama</h2>
-
-          <div class="flex items-center gap-4">
-            <span id="activeUserBadge" class="text-xs bg-gray-900 border border-gray-800 px-4 py-1.5 rounded-full text-brand-500 font-bold capitalize shadow-sm">User</span>
-            <button onclick="logout()" class="lg:hidden w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-right-from-bracket"></i></button>
-          </div>
+          <button onclick="openSavingsModal()" class="text-xs bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-xl font-bold transition shadow-lg shadow-brand-500/20">+ Tambah Target</button>
         </div>
-      </header>
+        <div id="savingsListFull" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </div>
 
-      <main class="max-w-7xl mx-auto px-6 lg:px-10 py-8 space-y-8">
-
-        <!-- ================= 1. VIEW BERANDA ================= -->
-        <div id="viewBeranda" class="space-y-8">
-          
-          <!-- TOP 3 METRICS CARDS -->
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-gradient-to-br from-[#131d31] to-[#1e293b] border border-gray-800/80 p-6 rounded-3xl shadow-xl relative overflow-hidden flex flex-col justify-between">
-              <div class="absolute -right-6 -bottom-6 opacity-10 text-brand-500 text-8xl"><i class="fa-solid fa-wallet"></i></div>
-              <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Total Saldo Keuangan</p>
-              <h2 id="totalBalance" class="text-3xl lg:text-4xl font-black text-white tracking-tight my-2">Rp 0</h2>
-              <p class="text-[11px] text-gray-400 mt-2">Update otomatis berdasarkan transaksi</p>
-            </div>
-
-            <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-xl flex flex-col justify-between">
-              <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Pemasukan</p>
-                <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-down"></i></span>
-              </div>
-              <h2 id="monthIncome" class="text-2xl lg:text-3xl font-bold text-emerald-400 tracking-tight my-2">+Rp 0</h2>
-              <p class="text-[11px] text-gray-400">Total akumulasi transaksi masuk</p>
-            </div>
-
-            <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-xl flex flex-col justify-between">
-              <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Pengeluaran</p>
-                <span class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-up"></i></span>
-              </div>
-              <h2 id="monthExpense" class="text-2xl lg:text-3xl font-bold text-rose-400 tracking-tight my-2">Rp 0</h2>
-              <p class="text-[11px] text-gray-400">Total akumulasi transaksi keluar</p>
-            </div>
+      <!-- ================= 4. VIEW DOMPET TERPISAH ================= -->
+      <div id="viewDompet" class="space-y-6 hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-lg text-white">Dompet & Rekening Terpisah</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Alokasi saldo di berbagai platform atau bank</p>
           </div>
-
-          <!-- MAIN GRID 2 COLUMN (DESKTOP) -->
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <!-- KOLOM KIRI: TRANSAKSI (7 Kolom) -->
-            <div class="lg:col-span-7 space-y-6">
-              <div class="bg-[#131d31]/90 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
-                <h3 class="font-bold text-sm text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-plus text-brand-500"></i> Catat Transaksi Cepat</h3>
-                <form id="transactionForm" class="space-y-4">
-                  <div class="grid grid-cols-2 gap-3">
-                    <button type="button" id="btnIncome" onclick="setType('income')" class="py-2.5 rounded-xl text-xs font-bold border border-brand-500 text-brand-500 bg-brand-500/10 shadow-sm">Pemasukan</button>
-                    <button type="button" id="btnExpense" onclick="setType('expense')" class="py-2.5 rounded-xl text-xs font-bold border border-gray-800 text-gray-400">Pengeluaran</button>
-                  </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label class="block text-[11px] font-semibold text-gray-400 mb-1">Nominal (Rp)</label>
-                      <input type="number" id="amountInput" required placeholder="0" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
-                    </div>
-                    <div>
-                      <label class="block text-[11px] font-semibold text-gray-400 mb-1">Kategori</label>
-                      <input type="text" id="categoryInput" required placeholder="Gaji, Makan, Investasi" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label class="block text-[11px] font-semibold text-gray-400 mb-1">Tanggal</label>
-                      <input type="date" id="dateInput" required class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
-                    </div>
-                    <div>
-                      <label class="block text-[11px] font-semibold text-gray-400 mb-1">Catatan</label>
-                      <input type="text" id="noteInput" placeholder="Keterangan (opsional)" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
-                    </div>
-                  </div>
-                  <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 active:scale-[0.99] text-white font-bold rounded-xl text-xs transition shadow-lg shadow-brand-500/20">Simpan Transaksi</button>
-                </form>
-              </div>
-
-              <div class="bg-[#131d31]/90 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
-                <div class="flex items-center justify-between mb-4">
-                  <h3 class="font-bold text-sm text-white">Riwayat Transaksi</h3>
-                  <button onclick="exportToExcel()" class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-semibold hover:bg-emerald-500/30 transition">
-                    <i class="fa-solid fa-file-excel mr-1"></i> Excel
-                  </button>
-                </div>
-                <div class="overflow-x-auto max-h-[380px] overflow-y-auto pr-1">
-                  <table class="w-full text-left text-xs">
-                    <thead>
-                      <tr class="border-b border-gray-800 text-gray-400">
-                        <th class="pb-3 font-semibold">Kategori & Catatan</th>
-                        <th class="pb-3 font-semibold">Tanggal</th>
-                        <th class="pb-3 font-semibold text-right">Nominal</th>
-                      </tr>
-                    </thead>
-                    <tbody id="transactionList" class="divide-y divide-gray-800/60"></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- KOLOM KANAN: DOMPET & TARGET (5 Kolom) -->
-            <div class="lg:col-span-5 space-y-6">
-              <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
-                <div class="flex items-center justify-between mb-4">
-                  <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-wallet text-brand-500"></i> Dompet / E-Wallet</h3>
-                  <button onclick="openWalletModal()" class="text-xs text-brand-500 font-semibold hover:underline">+ Tambah</button>
-                </div>
-                <div id="walletListHome" class="grid grid-cols-1 gap-3"></div>
-              </div>
-
-              <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
-                <div class="flex items-center justify-between mb-4">
-                  <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-bullseye text-brand-500"></i> Target Nabung</h3>
-                  <button onclick="openSavingsModal()" class="text-xs text-brand-500 font-semibold hover:underline">+ Tambah</button>
-                </div>
-                <div id="savingsListHome" class="space-y-3.5"></div>
-              </div>
-            </div>
-
-          </div>
+          <button onclick="openWalletModal()" class="text-xs bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-xl font-bold transition shadow-lg shadow-brand-500/20">+ Tambah Dompet</button>
         </div>
+        <div id="walletListFull" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </div>
 
-        <!-- ================= 2. VIEW TRANSAKSI ================= -->
-        <div id="viewTransaksi" class="space-y-6 hidden">
-          <div class="bg-[#131d31]/90 border border-gray-800/80 p-6 rounded-3xl shadow-xl">
-            <div class="flex items-center justify-between mb-6">
-              <h3 class="font-bold text-base text-white">Semua Riwayat Transaksi</h3>
-              <button onclick="exportToExcel()" class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2 rounded-xl font-semibold hover:bg-emerald-500/30 transition">
-                <i class="fa-solid fa-file-excel mr-1.5"></i> Ekspor ke Excel
-              </button>
-            </div>
-            <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
-              <table class="w-full text-left text-xs">
-                <thead>
-                  <tr class="border-b border-gray-800 text-gray-400">
-                    <th class="pb-3 font-semibold">Kategori & Catatan</th>
-                    <th class="pb-3 font-semibold">Tanggal</th>
-                    <th class="pb-3 font-semibold text-right">Nominal</th>
-                  </tr>
-                </thead>
-                <tbody id="transactionListFull" class="divide-y divide-gray-800/60"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- ================= 3. VIEW TARGET NABUNG ================= -->
-        <div id="viewTarget" class="space-y-6 hidden">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="font-bold text-lg text-white">Target Nabung</h3>
-              <p class="text-xs text-gray-400 mt-0.5">Kelola impian dan target akumulasi tabungan Anda</p>
-            </div>
-            <button onclick="openSavingsModal()" class="text-xs bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-xl font-bold transition shadow-lg shadow-brand-500/20">+ Tambah Target</button>
-          </div>
-          <div id="savingsListFull" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-        </div>
-
-        <!-- ================= 4. VIEW DOMPET TERPISAH ================= -->
-        <div id="viewDompet" class="space-y-6 hidden">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="font-bold text-lg text-white">Dompet & Rekening Terpisah</h3>
-              <p class="text-xs text-gray-400 mt-0.5">Alokasi saldo di berbagai platform atau bank</p>
-            </div>
-            <button onclick="openWalletModal()" class="text-xs bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-xl font-bold transition shadow-lg shadow-brand-500/20">+ Tambah Dompet</button>
-          </div>
-          <div id="walletListFull" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-        </div>
-
-      </main>
-    </div>
+    </main>
   </div>
 
-  <!-- MOBILE BOTTOM NAVIGATION BAR -->
-  <nav id="bottomNav" class="hidden fixed bottom-3 left-4 right-4 bg-[#131d31]/95 backdrop-blur-xl border border-gray-800/80 rounded-2xl p-2 z-40 lg:hidden shadow-2xl">
+  <!-- MAIN MENU DI BAWAH DASHBOARD (BERLAKU UNTUK DESKTOP & MOBILE) -->
+  <nav id="bottomNav" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#131d31]/95 backdrop-blur-xl border border-gray-800 rounded-2xl p-2 z-40 shadow-2xl w-[90%] max-w-xl">
     <div class="flex justify-around items-center text-xs font-semibold">
-      <button id="navBtn-beranda" onclick="switchNav('beranda')" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-brand-500 bg-brand-500/10 transition">
-        <i class="fa-solid fa-house text-sm mb-0.5"></i>
-        <span class="text-[10px]">Beranda</span>
+      <button id="navBtn-beranda" onclick="switchNav('beranda')" class="flex items-center gap-2 py-2 px-4 rounded-xl text-brand-500 bg-brand-500/10 transition">
+        <i class="fa-solid fa-house text-sm"></i>
+        <span>Beranda</span>
       </button>
-      <button id="navBtn-transaksi" onclick="switchNav('transaksi')" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-gray-400 hover:text-white transition">
-        <i class="fa-solid fa-list-check text-sm mb-0.5"></i>
-        <span class="text-[10px]">Transaksi</span>
+      <button id="navBtn-transaksi" onclick="switchNav('transaksi')" class="flex items-center gap-2 py-2 px-4 rounded-xl text-gray-400 hover:text-white transition">
+        <i class="fa-solid fa-list-check text-sm"></i>
+        <span>Transaksi</span>
       </button>
-      <button id="navBtn-target" onclick="switchNav('target')" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-gray-400 hover:text-white transition">
-        <i class="fa-solid fa-bullseye text-sm mb-0.5"></i>
-        <span class="text-[10px]">Target</span>
+      <button id="navBtn-target" onclick="switchNav('target')" class="flex items-center gap-2 py-2 px-4 rounded-xl text-gray-400 hover:text-white transition">
+        <i class="fa-solid fa-bullseye text-sm"></i>
+        <span>Target</span>
       </button>
-      <button id="navBtn-dompet" onclick="switchNav('dompet')" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-gray-400 hover:text-white transition">
-        <i class="fa-solid fa-wallet text-sm mb-0.5"></i>
-        <span class="text-[10px]">Dompet</span>
+      <button id="navBtn-dompet" onclick="switchNav('dompet')" class="flex items-center gap-2 py-2 px-4 rounded-xl text-gray-400 hover:text-white transition">
+        <i class="fa-solid fa-wallet text-sm"></i>
+        <span>Dompet</span>
       </button>
     </div>
   </nav>
@@ -478,7 +440,6 @@
       authMsg.classList.add('hidden');
     });
 
-    // Handle Register
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       showLoading();
@@ -509,7 +470,6 @@
       }
     });
 
-    // Handle Login
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       showLoading();
@@ -549,8 +509,6 @@
       if(bottomNav) bottomNav.classList.remove('hidden');
       
       document.getElementById('activeUserBadge').innerText = currentUser;
-      document.getElementById('lblUsername').innerText = currentUser;
-      document.getElementById('userAvatar').innerText = currentUser.charAt(0).toUpperCase();
 
       await loadData();
       switchNav('beranda');
@@ -585,22 +543,13 @@
 
       ['beranda', 'transaksi', 'target', 'dompet'].forEach(n => {
         const btn = document.getElementById(`navBtn-${n}`);
-        if(btn) btn.className = "flex flex-col items-center py-1.5 px-3 rounded-xl text-gray-400 hover:text-white transition";
-        
-        const sideBtn = document.getElementById(`sidebarBtn-${n}`);
-        if(sideBtn) sideBtn.className = "w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800/40 transition";
+        if(btn) btn.className = "flex items-center gap-2 py-2 px-4 rounded-xl text-gray-400 hover:text-white transition";
       });
 
       document.getElementById(`view${navName.charAt(0).toUpperCase() + navName.slice(1)}`).classList.remove('hidden');
       
       const activeBtn = document.getElementById(`navBtn-${navName}`);
-      if(activeBtn) activeBtn.className = "flex flex-col items-center py-1.5 px-3 rounded-xl text-brand-500 bg-brand-500/10 transition";
-
-      const activeSideBtn = document.getElementById(`sidebarBtn-${navName}`);
-      if(activeSideBtn) activeSideBtn.className = "w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-semibold text-brand-500 bg-brand-500/10 border border-brand-500/20 shadow-sm transition";
-
-      const titles = { beranda: 'Beranda Utama', transaksi: 'Kelola Transaksi', target: 'Target Nabung', dompet: 'Dompet Terpisah' };
-      document.getElementById('desktopTitle').innerText = titles[navName] || 'Dashboard';
+      if(activeBtn) activeBtn.className = "flex items-center gap-2 py-2 px-4 rounded-xl text-brand-500 bg-brand-500/10 transition font-bold";
     }
 
     function setType(type) {
@@ -703,7 +652,7 @@
       if (savFull) savFull.innerHTML = savHtml;
     }
 
-    // Controls Modal
+    // Modal Controls
     function openWalletModal() { document.getElementById('walletModal').classList.remove('hidden'); }
     function closeWalletModal() { document.getElementById('walletModal').classList.add('hidden'); }
     function openSavingsModal() { document.getElementById('savingsModal').classList.remove('hidden'); }
@@ -724,8 +673,8 @@
       hideLoading();
 
       if (error) {
-        console.error("Wallet Insert Error:", error);
-        alert("Gagal menambahkan E-Wallet!\n\nDetail Error: " + error.message + "\n\nSaran: Pastikan RLS di tabel 'wallets' pada Supabase sudah di-DISABLE!");
+        console.error("Wallet Error:", error);
+        alert("Gagal menambahkan E-Wallet!\n\nDetail Error: " + error.message);
       } else {
         closeWalletModal();
         document.getElementById('walletForm').reset();
@@ -755,8 +704,8 @@
       hideLoading();
 
       if (error) {
-        console.error("Savings Insert Error:", error);
-        alert("Gagal menambahkan Target Nabung!\n\nDetail Error: " + error.message + "\n\nSaran: Pastikan RLS di tabel 'savings_goals' pada Supabase sudah di-DISABLE!");
+        console.error("Savings Error:", error);
+        alert("Gagal menambahkan Target Nabung!\n\nDetail Error: " + error.message);
       } else {
         closeSavingsModal();
         document.getElementById('savingsForm').reset();

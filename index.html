@@ -302,7 +302,7 @@
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 class="font-bold text-lg text-white">Target Nabung</h3>
-            <p class="text-xs text-gray-400 mt-0.5">Kelola impian dan target akumulasi tabungan Anda</p>
+            <p class="text-xs text-gray-400 mt-0.5">Kelola impian dan target akumulasi tabungan Anda[cite: 5]</p>
           </div>
           <button onclick="openSavingsModal()" class="text-xs bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-xl font-bold transition shadow-lg shadow-brand-500/20">+ Tambah Target</button>
         </div>
@@ -324,7 +324,7 @@
     </main>
   </div>
 
-  <!-- MAIN MENU BOTTOM NAV (DIAMBIL 100% SAMA DI HP DENGAN GRID SIMETRIS 4 KOLOM) -->
+  <!-- MAIN MENU BOTTOM NAV -->
   <nav id="bottomNav" class="hidden fixed bottom-3 left-1/2 -translate-x-1/2 bg-[#131d31]/95 backdrop-blur-xl border border-gray-800 rounded-2xl p-1.5 z-40 shadow-2xl w-[92%] max-w-lg">
     <div class="grid grid-cols-4 gap-1 text-center font-semibold">
       <button id="navBtn-beranda" onclick="switchNav('beranda')" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-brand-500 bg-brand-500/10 transition">
@@ -656,9 +656,11 @@
               <div class="w-full bg-gray-800 h-2.5 rounded-full overflow-hidden shadow-inner">
                 <div class="bg-brand-500 h-full rounded-full transition-all duration-700" style="width: ${pct}%"></div>
               </div>
-              <div class="flex justify-between text-[10px] text-gray-400 font-medium">
+              <div class="flex justify-between items-center text-[10px] text-gray-400 font-medium">
                 <span>${pct}% tercapai</span>
-                <span class="text-brand-500">Target Aktif</span>
+                <button onclick="addSavingsAmount('${s.id}')" class="px-2.5 py-1 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 rounded-lg font-semibold transition flex items-center gap-1">
+                  <i class="fa-solid fa-plus text-[9px]"></i> Tambah Nominal
+                </button>
               </div>
             </div>
           `;
@@ -673,6 +675,37 @@
     function closeWalletModal() { document.getElementById('walletModal').classList.add('hidden'); }
     function openSavingsModal() { document.getElementById('savingsModal').classList.remove('hidden'); }
     function closeSavingsModal() { document.getElementById('savingsModal').classList.add('hidden'); }
+
+    // FUNGSI TAMBAH NOMINAL PADA TARGET NABUNG
+    async function addSavingsAmount(id) {
+      const amountStr = prompt("Masukkan jumlah nominal tabungan yang ingin ditambahkan (Rp):");
+      if (!amountStr) return;
+      const addVal = parseFloat(amountStr);
+      if (isNaN(addVal) || addVal <= 0) {
+        alert("Nominal tidak valid!");
+        return;
+      }
+
+      const targetObj = savings.find(item => item.id == id);
+      if (!targetObj) return;
+
+      const newCurrent = Number(targetObj.current_amount) + addVal;
+
+      showLoading();
+      const { error } = await db
+        .from('savings_goals')
+        .update({ current_amount: newCurrent })
+        .eq('id', id);
+
+      hideLoading();
+
+      if (error) {
+        console.error("Savings Update Error:", error);
+        alert("Gagal memperbarui target: " + error.message);
+      } else {
+        await loadData();
+      }
+    }
 
     // HANDLER TAMBAH E-WALLET
     document.getElementById('walletForm').addEventListener('submit', async (e) => {
@@ -798,4 +831,3 @@
   </script>
 </body>
 </html>
-

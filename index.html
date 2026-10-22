@@ -2,13 +2,15 @@
 <html lang="id" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Financial Recording - Enterprise Dashboard</title>
 
-  <!-- Tailwind CSS & FontAwesome -->
+  <!-- Tailwind CSS, FontAwesome, Supabase, SheetJS, html2canvas -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -29,8 +31,6 @@
     }
   </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
   <style>
     body { background-color: #0b0f19; color: #f3f4f6; }
     .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
@@ -39,7 +39,7 @@
   </style>
 </head>
 
-<body class="min-h-screen font-sans antialiased text-gray-200 pb-28">
+<body class="min-h-screen font-sans antialiased text-gray-200 pb-28 overflow-x-hidden">
 
   <!-- ================= LOADING OVERLAY ================= -->
   <div id="loadingOverlay" class="hidden fixed inset-0 bg-[#0b0f19]/80 backdrop-blur-md z-50 flex flex-col items-center justify-center gap-3">
@@ -52,7 +52,7 @@
     <div class="absolute -top-32 -left-32 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="w-full max-w-md bg-[#131d31]/90 backdrop-blur-2xl border border-gray-800 rounded-3xl p-8 shadow-2xl relative z-10">
+    <div class="w-full max-w-md bg-[#131d31]/90 backdrop-blur-2xl border border-gray-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10">
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-14 h-14 bg-brand-500/10 border border-brand-500/30 rounded-2xl mb-3 text-brand-500 text-2xl shadow-lg">
           <i class="fa-solid fa-wallet"></i>
@@ -120,23 +120,23 @@
 
     <!-- TOP HEADER FULL WIDTH -->
     <header class="sticky top-0 z-30 bg-[#0b0f19]/80 backdrop-blur-xl border-b border-gray-800/80">
-      <div class="w-full px-6 lg:px-12 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
+      <div class="w-full px-4 sm:px-6 lg:px-12 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
           <div class="w-9 h-9 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-500">
             <i class="fa-solid fa-wallet text-sm"></i>
           </div>
           <div>
-            <h1 class="font-bold text-base tracking-wide text-white">Financial Recording</h1>
+            <h1 class="font-bold text-sm sm:text-base tracking-wide text-white">Financial Recording</h1>
             <p class="text-[10px] text-gray-400 font-medium hidden sm:block">Enterprise Dashboard System</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 bg-gray-900 border border-gray-800 px-4 py-1.5 rounded-full">
+        <div class="flex items-center gap-2.5 sm:gap-4">
+          <div class="flex items-center gap-2 bg-gray-900 border border-gray-800 px-3 sm:px-4 py-1.5 rounded-full">
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span id="activeUserBadge" class="text-xs text-brand-500 font-bold capitalize">User</span>
           </div>
-          <button onclick="logout()" class="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+          <button onclick="logout()" class="px-2.5 sm:px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
             <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Keluar</span>
           </button>
         </div>
@@ -144,127 +144,143 @@
     </header>
 
     <!-- MAIN CONTENT FULL SCREEN -->
-    <main class="w-full px-6 lg:px-12 py-8 space-y-8 flex-1">
+    <main class="w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8 space-y-6 sm:space-y-8 flex-1">
 
       <!-- ================= 1. VIEW BERANDA ================= -->
-      <div id="viewBeranda" class="space-y-8">
+      <div id="viewBeranda" class="space-y-6 sm:space-y-8">
         
-        <!-- TOP METRICS CARDS 3 KOLOM SEJAJAR (FULL WIDTH) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="bg-gradient-to-br from-[#131d31] to-[#1e293b] border border-gray-800/80 p-6 rounded-3xl shadow-xl relative overflow-hidden flex flex-col justify-between">
-            <div class="absolute -right-6 -bottom-6 opacity-10 text-brand-500 text-8xl"><i class="fa-solid fa-wallet"></i></div>
-            <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Total Saldo Keuangan</p>
-            <h2 id="totalBalance" class="text-3xl lg:text-5xl font-black text-white tracking-tight my-2">Rp 0</h2>
-            <p class="text-[11px] text-gray-400 mt-2">Update otomatis berdasarkan transaksi</p>
-          </div>
-
-          <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-xl flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-2">
-              <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Pemasukan</p>
-              <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-down"></i></span>
-            </div>
-            <h2 id="monthIncome" class="text-2xl lg:text-4xl font-bold text-emerald-400 tracking-tight my-2">+Rp 0</h2>
-            <p class="text-[11px] text-gray-400">Total akumulasi transaksi masuk</p>
-          </div>
-
-          <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-xl flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-2">
-              <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Pengeluaran</p>
-              <span class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-up"></i></span>
-            </div>
-            <h2 id="monthExpense" class="text-2xl lg:text-4xl font-bold text-rose-400 tracking-tight my-2">Rp 0</h2>
-            <p class="text-[11px] text-gray-400">Total akumulasi transaksi keluar</p>
-          </div>
-        </div>
-
-        <!-- MAIN GRID 2 KOLOM SEIMBANG -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- AREA REKAP GAMBAR -->
+        <div id="reportSection" class="space-y-6 sm:space-y-8 bg-[#0b0f19] p-1 sm:p-2 rounded-3xl">
           
-          <!-- KOLOM KIRI: FORM & TABEL TRANSAKSI (7 Kolom) -->
-          <div class="lg:col-span-7 space-y-6">
-            <div class="bg-[#131d31]/90 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
-              <h3 class="font-bold text-sm text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-plus text-brand-500"></i> Catat Transaksi Cepat</h3>
-              <form id="transactionForm" class="space-y-4">
-                <div class="grid grid-cols-2 gap-3">
-                  <button type="button" id="btnIncome" onclick="setType('income')" class="py-2.5 rounded-xl text-xs font-bold border border-brand-500 text-brand-500 bg-brand-500/10 shadow-sm">Pemasukan</button>
-                  <button type="button" id="btnExpense" onclick="setType('expense')" class="py-2.5 rounded-xl text-xs font-bold border border-gray-800 text-gray-400">Pengeluaran</button>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Nominal (Rp)</label>
-                    <input type="number" id="amountInput" required placeholder="0" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
-                  </div>
-                  <div>
-                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Kategori</label>
-                    <input type="text" id="categoryInput" required placeholder="Gaji, Makan, Investasi" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
-                  </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Tanggal</label>
-                    <input type="date" id="dateInput" required class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
-                  </div>
-                  <div>
-                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Catatan</label>
-                    <input type="text" id="noteInput" placeholder="Keterangan (opsional)" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
-                  </div>
-                </div>
-                <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 active:scale-[0.99] text-white font-bold rounded-xl text-xs transition shadow-lg shadow-brand-500/20">Simpan Transaksi</button>
-              </form>
+          <!-- TOP METRICS CARDS -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div class="bg-gradient-to-br from-[#131d31] to-[#1e293b] border border-gray-800/80 p-5 sm:p-6 rounded-3xl shadow-xl relative overflow-hidden flex flex-col justify-between">
+              <div class="absolute -right-6 -bottom-6 opacity-10 text-brand-500 text-8xl"><i class="fa-solid fa-wallet"></i></div>
+              <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Total Saldo Keuangan</p>
+              <h2 id="totalBalance" class="text-2xl sm:text-3xl lg:text-5xl font-black text-white tracking-tight my-1 sm:my-2">Rp 0</h2>
+              <p class="text-[10px] sm:text-[11px] text-gray-400 mt-1">Update otomatis berdasarkan transaksi</p>
             </div>
 
-            <div class="bg-[#131d31]/90 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-sm text-white">Riwayat Transaksi</h3>
-                <button onclick="exportToExcel()" class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-semibold hover:bg-emerald-500/30 transition">
-                  <i class="fa-solid fa-file-excel mr-1"></i> Excel
-                </button>
+            <div class="bg-[#131d31]/80 border border-gray-800/80 p-5 sm:p-6 rounded-3xl shadow-xl flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Pemasukan</p>
+                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-down"></i></span>
               </div>
-              <div class="overflow-x-auto max-h-[380px] overflow-y-auto pr-1">
-                <table class="w-full text-left text-xs">
-                  <thead>
-                    <tr class="border-b border-gray-800 text-gray-400">
-                      <th class="pb-3 font-semibold">Kategori & Catatan</th>
-                      <th class="pb-3 font-semibold">Tanggal</th>
-                      <th class="pb-3 font-semibold text-right">Nominal</th>
-                    </tr>
-                  </thead>
-                  <tbody id="transactionList" class="divide-y divide-gray-800/60"></tbody>
-                </table>
+              <h2 id="monthIncome" class="text-xl sm:text-2xl lg:text-4xl font-bold text-emerald-400 tracking-tight my-1 sm:my-2">+Rp 0</h2>
+              <p class="text-[10px] sm:text-[11px] text-gray-400">Total akumulasi transaksi masuk</p>
+            </div>
+
+            <div class="bg-[#131d31]/80 border border-gray-800/80 p-5 sm:p-6 rounded-3xl shadow-xl flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Pengeluaran</p>
+                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-up"></i></span>
               </div>
+              <h2 id="monthExpense" class="text-xl sm:text-2xl lg:text-4xl font-bold text-rose-400 tracking-tight my-1 sm:my-2">Rp 0</h2>
+              <p class="text-[10px] sm:text-[11px] text-gray-400">Total akumulasi transaksi keluar</p>
             </div>
           </div>
 
-          <!-- KOLOM KANAN: DOMPET & TARGET NABUNG (5 Kolom) -->
-          <div class="lg:col-span-5 space-y-6">
-            <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-wallet text-brand-500"></i> Dompet / E-Wallet</h3>
-                <button onclick="openWalletModal()" class="text-xs text-brand-500 font-semibold hover:underline">+ Tambah</button>
+          <!-- MAIN GRID 2 KOLOM -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+            
+            <!-- KOLOM KIRI (7 Kolom) -->
+            <div class="lg:col-span-7 space-y-6">
+              <div class="bg-[#131d31]/90 border border-gray-800/80 p-5 sm:p-6 rounded-3xl shadow-lg">
+                <h3 class="font-bold text-sm text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-plus text-brand-500"></i> Catat Transaksi Cepat</h3>
+                <form id="transactionForm" class="space-y-4">
+                  <div class="grid grid-cols-2 gap-3">
+                    <button type="button" id="btnIncome" onclick="setType('income')" class="py-2.5 rounded-xl text-xs font-bold border border-brand-500 text-brand-500 bg-brand-500/10 shadow-sm">Pemasukan</button>
+                    <button type="button" id="btnExpense" onclick="setType('expense')" class="py-2.5 rounded-xl text-xs font-bold border border-gray-800 text-gray-400">Pengeluaran</button>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-[11px] font-semibold text-gray-400 mb-1">Nominal (Rp)</label>
+                      <input type="number" id="amountInput" required placeholder="0" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                      <label class="block text-[11px] font-semibold text-gray-400 mb-1">Kategori</label>
+                      <input type="text" id="categoryInput" required placeholder="Gaji, Makan, Investasi" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-[11px] font-semibold text-gray-400 mb-1">Tanggal</label>
+                      <input type="date" id="dateInput" required class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                      <label class="block text-[11px] font-semibold text-gray-400 mb-1">Catatan</label>
+                      <input type="text" id="noteInput" placeholder="Keterangan (opsional)" class="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-800 bg-gray-900 focus:outline-none focus:border-brand-500">
+                    </div>
+                  </div>
+                  <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 active:scale-[0.99] text-white font-bold rounded-xl text-xs transition shadow-lg shadow-brand-500/20">Simpan Transaksi</button>
+                </form>
               </div>
-              <div id="walletListHome" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3"></div>
+
+              <!-- TABEL TRANSAKSI -->
+              <div class="bg-[#131d31]/90 border border-gray-800/80 p-5 sm:p-6 rounded-3xl shadow-lg">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                  <h3 class="font-bold text-sm text-white">Riwayat Transaksi</h3>
+                  <div class="flex gap-2">
+                    <button onclick="exportToImage()" class="text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2.5 py-1.5 rounded-xl font-semibold hover:bg-indigo-500/30 transition flex items-center gap-1">
+                      <i class="fa-solid fa-image"></i> Gambar
+                    </button>
+                    <button onclick="exportToExcel()" class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1.5 rounded-xl font-semibold hover:bg-emerald-500/30 transition flex items-center gap-1">
+                      <i class="fa-solid fa-file-excel"></i> Excel
+                    </button>
+                  </div>
+                </div>
+                <div class="overflow-x-auto max-h-[380px] overflow-y-auto pr-1">
+                  <table class="w-full text-left text-xs">
+                    <thead>
+                      <tr class="border-b border-gray-800 text-gray-400">
+                        <th class="pb-3 font-semibold">Kategori & Catatan</th>
+                        <th class="pb-3 font-semibold">Tanggal</th>
+                        <th class="pb-3 font-semibold text-right">Nominal</th>
+                      </tr>
+                    </thead>
+                    <tbody id="transactionList" class="divide-y divide-gray-800/60"></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
-            <div class="bg-[#131d31]/80 border border-gray-800/80 p-6 rounded-3xl shadow-lg">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-bullseye text-brand-500"></i> Target Nabung</h3>
-                <button onclick="openSavingsModal()" class="text-xs text-brand-500 font-semibold hover:underline">+ Tambah</button>
+            <!-- KOLOM KANAN (5 Kolom) -->
+            <div class="lg:col-span-5 space-y-6">
+              <div class="bg-[#131d31]/80 border border-gray-800/80 p-5 sm:p-6 rounded-3xl shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-wallet text-brand-500"></i> Dompet / E-Wallet</h3>
+                  <button onclick="openWalletModal()" class="text-xs text-brand-500 font-semibold hover:underline">+ Tambah</button>
+                </div>
+                <div id="walletListHome" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3"></div>
               </div>
-              <div id="savingsListHome" class="space-y-3.5"></div>
+
+              <div class="bg-[#131d31]/80 border border-gray-800/80 p-5 sm:p-6 rounded-3xl shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-bullseye text-brand-500"></i> Target Nabung</h3>
+                  <button onclick="openSavingsModal()" class="text-xs text-brand-500 font-semibold hover:underline">+ Tambah</button>
+                </div>
+                <div id="savingsListHome" class="space-y-3.5"></div>
+              </div>
             </div>
+
           </div>
-
         </div>
+
       </div>
 
       <!-- ================= 2. VIEW TRANSAKSI ================= -->
       <div id="viewTransaksi" class="space-y-6 hidden">
-        <div class="bg-[#131d31]/90 border border-gray-800/80 p-6 rounded-3xl shadow-xl">
-          <div class="flex items-center justify-between mb-6">
+        <div class="bg-[#131d31]/90 border border-gray-800/80 p-5 sm:p-6 rounded-3xl shadow-xl">
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-2">
             <h3 class="font-bold text-base text-white">Semua Riwayat Transaksi</h3>
-            <button onclick="exportToExcel()" class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2 rounded-xl font-semibold hover:bg-emerald-500/30 transition">
-              <i class="fa-solid fa-file-excel mr-1.5"></i> Ekspor ke Excel
-            </button>
+            <div class="flex gap-2">
+              <button onclick="exportToImage()" class="text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-3 py-2 rounded-xl font-semibold hover:bg-indigo-500/30 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-image"></i> Gambar (.PNG)
+              </button>
+              <button onclick="exportToExcel()" class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl font-semibold hover:bg-emerald-500/30 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-file-excel"></i> Excel (.XLSX)
+              </button>
+            </div>
           </div>
           <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
             <table class="w-full text-left text-xs">
@@ -283,7 +299,7 @@
 
       <!-- ================= 3. VIEW TARGET NABUNG ================= -->
       <div id="viewTarget" class="space-y-6 hidden">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 class="font-bold text-lg text-white">Target Nabung</h3>
             <p class="text-xs text-gray-400 mt-0.5">Kelola impian dan target akumulasi tabungan Anda</p>
@@ -295,7 +311,7 @@
 
       <!-- ================= 4. VIEW DOMPET TERPISAH ================= -->
       <div id="viewDompet" class="space-y-6 hidden">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 class="font-bold text-lg text-white">Dompet & Rekening Terpisah</h3>
             <p class="text-xs text-gray-400 mt-0.5">Alokasi saldo di berbagai platform atau bank</p>
@@ -308,24 +324,24 @@
     </main>
   </div>
 
-  <!-- MAIN MENU DI BAWAH DASHBOARD (BERLAKU UNTUK DESKTOP & MOBILE) -->
-  <nav id="bottomNav" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#131d31]/95 backdrop-blur-xl border border-gray-800 rounded-2xl p-2 z-40 shadow-2xl w-[90%] max-w-xl">
-    <div class="flex justify-around items-center text-xs font-semibold">
-      <button id="navBtn-beranda" onclick="switchNav('beranda')" class="flex items-center gap-2 py-2 px-4 rounded-xl text-brand-500 bg-brand-500/10 transition">
-        <i class="fa-solid fa-house text-sm"></i>
-        <span>Beranda</span>
+  <!-- MAIN MENU BOTTOM NAV (DIAMBIL 100% SAMA DI HP DENGAN GRID SIMETRIS 4 KOLOM) -->
+  <nav id="bottomNav" class="hidden fixed bottom-3 left-1/2 -translate-x-1/2 bg-[#131d31]/95 backdrop-blur-xl border border-gray-800 rounded-2xl p-1.5 z-40 shadow-2xl w-[92%] max-w-lg">
+    <div class="grid grid-cols-4 gap-1 text-center font-semibold">
+      <button id="navBtn-beranda" onclick="switchNav('beranda')" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-brand-500 bg-brand-500/10 transition">
+        <i class="fa-solid fa-house text-xs sm:text-sm mb-1"></i>
+        <span class="text-[10px] sm:text-xs tracking-tight">Beranda</span>
       </button>
-      <button id="navBtn-transaksi" onclick="switchNav('transaksi')" class="flex items-center gap-2 py-2 px-4 rounded-xl text-gray-400 hover:text-white transition">
-        <i class="fa-solid fa-list-check text-sm"></i>
-        <span>Transaksi</span>
+      <button id="navBtn-transaksi" onclick="switchNav('transaksi')" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-gray-400 hover:text-white transition">
+        <i class="fa-solid fa-list-check text-xs sm:text-sm mb-1"></i>
+        <span class="text-[10px] sm:text-xs tracking-tight">Transaksi</span>
       </button>
-      <button id="navBtn-target" onclick="switchNav('target')" class="flex items-center gap-2 py-2 px-4 rounded-xl text-gray-400 hover:text-white transition">
-        <i class="fa-solid fa-bullseye text-sm"></i>
-        <span>Target</span>
+      <button id="navBtn-target" onclick="switchNav('target')" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-gray-400 hover:text-white transition">
+        <i class="fa-solid fa-bullseye text-xs sm:text-sm mb-1"></i>
+        <span class="text-[10px] sm:text-xs tracking-tight">Target</span>
       </button>
-      <button id="navBtn-dompet" onclick="switchNav('dompet')" class="flex items-center gap-2 py-2 px-4 rounded-xl text-gray-400 hover:text-white transition">
-        <i class="fa-solid fa-wallet text-sm"></i>
-        <span>Dompet</span>
+      <button id="navBtn-dompet" onclick="switchNav('dompet')" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-gray-400 hover:text-white transition">
+        <i class="fa-solid fa-wallet text-xs sm:text-sm mb-1"></i>
+        <span class="text-[10px] sm:text-xs tracking-tight">Dompet</span>
       </button>
     </div>
   </nav>
@@ -543,13 +559,13 @@
 
       ['beranda', 'transaksi', 'target', 'dompet'].forEach(n => {
         const btn = document.getElementById(`navBtn-${n}`);
-        if(btn) btn.className = "flex items-center gap-2 py-2 px-4 rounded-xl text-gray-400 hover:text-white transition";
+        if(btn) btn.className = "flex flex-col items-center justify-center py-2 px-1 rounded-xl text-gray-400 hover:text-white transition";
       });
 
       document.getElementById(`view${navName.charAt(0).toUpperCase() + navName.slice(1)}`).classList.remove('hidden');
       
       const activeBtn = document.getElementById(`navBtn-${navName}`);
-      if(activeBtn) activeBtn.className = "flex items-center gap-2 py-2 px-4 rounded-xl text-brand-500 bg-brand-500/10 transition font-bold";
+      if(activeBtn) activeBtn.className = "flex flex-col items-center justify-center py-2 px-1 rounded-xl text-brand-500 bg-brand-500/10 transition font-bold";
     }
 
     function setType(type) {
@@ -736,6 +752,7 @@
       }
     });
 
+    // EKSPOR KE EXCEL (.XLSX)
     function exportToExcel() {
       if (transactions.length === 0) { alert('Tidak ada transaksi untuk diekspor!'); return; }
       const data = transactions.map(t => ({
@@ -751,6 +768,28 @@
       XLSX.writeFile(wb, `Laporan_Keuangan_${currentUser}.xlsx`);
     }
 
+    // EKSPOR KE GAMBAR (.PNG)
+    function exportToImage() {
+      showLoading();
+      const element = document.getElementById('reportSection');
+      
+      html2canvas(element, {
+        backgroundColor: '#0b0f19',
+        scale: 2,
+        useCORS: true
+      }).then(canvas => {
+        hideLoading();
+        const link = document.createElement('a');
+        link.download = `Rekap_Keuangan_${currentUser}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }).catch(err => {
+        hideLoading();
+        console.error("Gambar Export Error:", err);
+        alert("Gagal mengunduh gambar rekap.");
+      });
+    }
+
     if (currentUser) {
       initDashboard();
     } else {
@@ -759,3 +798,4 @@
   </script>
 </body>
 </html>
+
